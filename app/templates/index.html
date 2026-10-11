@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon, category_icon %}
+{% from "partials/_place_card.html" import place_card with context %}
+{% block title %}Tripura Explore — {{ site_tagline }}{% endblock %}
+{% block description %}Discover destinations across Tripura, explore them on a map and build a day-wise trip plan.{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="container hero__grid">
+    <div>
+      <p class="eyebrow" style="color:#d9c39a">Tourism discovery · Tripura, India</p>
+      <h1>Discover the beauty of Tripura.</h1>
+      <p>
+        Lakes, hill ranges, rock-cut heritage, temples and wildlife — organised in one place so you can
+        decide where to go, see how far apart the places are and build a practical day-wise plan.
+      </p>
+
+      <form class="search-panel" method="get" action="{{ url_for('places.explore') }}" role="search">
+        <label class="visually-hidden" for="home-search">Search destinations</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="home-search" type="search" name="q" placeholder="Search Neermahal, Unakoti, Jampui Hills…" list="destination-suggestions">
+          <datalist id="destination-suggestions">
+            {% for place in featured_places %}<option value="{{ place.name }}"></option>{% endfor %}
+          </datalist>
+          <button class="btn btn--primary" type="submit">{{ icon("search", 18) }} Search</button>
+        </div>
+        <p class="text-muted" style="margin:10px 0 0;font-size:.83rem">Search by name, district or keyword. Every result opens the same destination record.</p>
+      </form>
+
+      <div class="hero__badges">
+        <span class="hero__badge">{{ published_count }} published destinations</span>
+        <span class="hero__badge">{{ categories|length }} categories</span>
+        <span class="hero__badge">{{ districts|length }} districts</span>
+      </div>
+    </div>
+
+    <div class="hero__media">
+      <img src="{{ url_for('static', filename='images/hero-tripura.svg') }}"
+           alt="Illustration of Tripura's hills, lakes and a royal lake palace."
+           width="1200" height="900">
+    </div>
+  </div>
+</section>
+
+<section class="section section--white">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Popular categories</p>
+        <h2>Start with what you enjoy</h2>
+        <p>Category shortcuts apply the matching filter on the Explore page.</p>
+      </div>
+      <a class="btn btn--secondary" href="{{ url_for('places.explore') }}">Browse all destinations</a>
+    </div>
+    <div class="cluster">
+      {% for category in categories %}
+        <a class="chip" href="{{ url_for('places.explore', category=category.slug) }}">
+          {{ category_icon(category.icon or category.slug, 16) }}
+          {{ category.name }}
+          <span class="chip__count">{{ category_counts.get(category.slug, 0) }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Featured destinations</p>
+        <h2>Places travellers ask about first</h2>
+        <p>All cards come from the destination database — the same record used on the map and in the planner.</p>
+      </div>
+      <a class="btn btn--ghost" href="{{ url_for('places.explore', sort='popular') }}">See more {{ icon("arrow-right", 16) }}</a>
+    </div>
+    {% if featured_places %}
+      <div class="grid grid--3">
+        {% for place in featured_places %}{{ place_card(place) }}{% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <h3>No destinations published yet</h3>
+        <p>An administrator has to publish destination records before they appear here. Run <code>flask seed-data</code> for the prototype dataset.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section section--ivory">
+  <div class="container split">
+    <div>
+      <p class="eyebrow">Plan your trip</p>
+      <h2>Turn your interests into a day-wise plan</h2>
+      <p>
+        Choose the number of days, where you start and what you want to see. The planner matches published
+        destinations to your interests, groups them by area and spreads them across your days.
+      </p>
+      <ul class="footer-list" style="color:var(--color-muted)">
+        <li>1. Pick your interests — nature, heritage, lakes, hills, temples, wildlife or culture.</li>
+        <li>2. Review the suggested day-by-day stops.</li>
+        <li>3. Sign in to save the trip, reorder stops and share a read-only link.</li>
+      </ul>
+      <div class="cluster mt-4">
+        <a class="btn btn--primary" href="{{ url_for('itineraries.trip_planner') }}">{{ icon("compass", 18) }} Open the trip planner</a>
+        <a class="btn btn--secondary" href="{{ url_for('map.map_page') }}">{{ icon("map", 18) }} See the map</a>
+      </div>
+    </div>
+    <div class="card" style="padding:var(--space-5)">
+      <h3 style="margin-top:0">What the planner will and will not do</h3>
+      <div class="data-status">
+        <div class="alert alert--info">{{ icon("info", 18) }}<span>Stops are grouped with straight-line distance when coordinates exist, otherwise by district.</span></div>
+        <div class="alert alert--warning">{{ icon("alert", 18) }}<span>Travel times, entry fees and opening hours are still being verified, so the plan is a suggestion — not an optimised route.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--navy">
+  <div class="container split">
+    <div>
+      <p class="eyebrow" style="color:#d9c39a">Explore the map</p>
+      <h2>See where everything is</h2>
+      <p>
+        Every marker on the map comes from a published destination record with coordinates. Filter by category
+        or district, open a popup and jump straight to the destination details.
+      </p>
+      <a class="btn btn--light" href="{{ url_for('map.map_page') }}">{{ icon("map", 18) }} Open the interactive map</a>
+    </div>
+    <div class="hero__media" style="box-shadow:none">
+      <img src="{{ url_for('static', filename='images/map-preview.svg') }}" alt="Simplified map illustration of Tripura with destination markers." width="1000" height="700">
+    </div>
+  </div>
+</section>
+
+<section class="section section--white">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Local experiences</p>
+        <h2>Homestays, guides, food and crafts</h2>
+        <p>An inquiry directory of providers, not a booking engine. Only approved listings are shown publicly.</p>
+      </div>
+      <a class="btn btn--ghost" href="{{ url_for('experiences.index') }}">All experiences {{ icon("arrow-right", 16) }}</a>
+    </div>
+    {% if experiences %}
+      <div class="grid grid--3">
+        {% for provider in experiences %}
+          <article class="card">
+            <div class="provider-card__media">
+              <img src="{{ provider.image_url or url_for('static', filename='images/place-placeholder.svg') }}"
+                   alt="{{ provider.image_alt or provider.name }}" loading="lazy">
+            </div>
+            <div class="card__body">
+              <span class="badge">{{ provider.category }}</span>
+              <h3 class="card__title"><a href="{{ url_for('experiences.detail', slug=provider.slug) }}">{{ provider.name }}</a></h3>
+              <p class="card__desc">{{ provider.short_description }}</p>
+              <span class="text-muted" style="font-size:.82rem">{{ provider.locality }}{% if provider.district %} · {{ provider.district.name }}{% endif %}</span>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <h3>No approved providers yet</h3>
+        <p>Provider listings stay hidden until an administrator approves them.</p>
+        <a class="btn btn--primary" href="{{ url_for('experiences.index') }}">Read about joining the directory</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Culture and festivals</p>
+        <h2>What is happening around the year</h2>
+        <p>An editorial overview. Cultural descriptions are marked as pending community review until they are approved.</p>
+      </div>
+    </div>
+    <div class="grid grid--4">
+      {% for item in highlights %}
+        <div class="highlight-card">
+          <span class="badge badge--muted">{{ item.kind }}</span>
+          <h3>{{ item.name }}</h3>
+          <p>{{ item.summary }}</p>
+          <p class="text-muted" style="font-size:.82rem;margin-top:8px">{{ item.month }} · {{ item.place }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container">
+    <div class="stat-row">
+      <div class="stat"><div class="stat__value">{{ published_count }}</div><div class="stat__label">Destinations</div></div>
+      <div class="stat"><div class="stat__value">{{ categories|length }}</div><div class="stat__label">Categories</div></div>
+      <div class="stat"><div class="stat__value">{{ districts|length }}</div><div class="stat__label">Districts</div></div>
+      <div class="stat"><div class="stat__value">3</div><div class="stat__label">Max trip days (MVP)</div></div>
+    </div>
+  </div>
+</section>
+{% endblock %}

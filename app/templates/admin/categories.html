@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}Categories — Admin — Tripura Explore{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container"><p class="eyebrow">Admin</p><h1>Categories and districts</h1>
+    <p>Destinations link to a category and a district by id, so filters keep working even when a name is corrected.</p></div>
+</section>
+
+<section class="section section--tight">
+  <div class="container admin-layout">
+    {% include "admin/_nav.html" %}
+    <div class="grid grid--2">
+      <div>
+        <h2>Categories</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th scope="col">Name</th><th scope="col">Slug</th><th scope="col">Destinations</th></tr></thead>
+            <tbody>
+              {% for category in categories %}
+                <tr><td>{{ category.name }}</td><td>/explore?category={{ category.slug }}</td><td>{{ category.places.filter_by(is_published=True).count() }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <h2 class="mt-6">Add a category</h2>
+        <form class="card form" method="post" style="padding:var(--space-4)">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="field"><label for="name">Name</label><input id="name" name="name" required minlength="2"></div>
+          <div class="field"><label for="slug">Slug</label><input id="slug" name="slug" required minlength="2" placeholder="for example festivals"></div>
+          <div class="field"><label for="description">Description</label><textarea id="description" name="description" rows="2"></textarea></div>
+          <button class="btn btn--primary" type="submit">{{ icon("plus", 18) }} Add category</button>
+        </form>
+      </div>
+      <div>
+        <h2>Districts</h2>
+        <p class="text-muted">The eight official districts of Tripura. A district with no published destination simply returns an empty result set.</p>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th scope="col">District</th><th scope="col">Slug</th><th scope="col">Published places</th></tr></thead>
+            <tbody>
+              {% for district in districts %}
+                <tr><td>{{ district.name }}</td><td>{{ district.slug }}</td><td>{{ district.places.filter_by(is_published=True).count() }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

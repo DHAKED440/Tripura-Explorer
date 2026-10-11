@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}Destinations — Admin — Tripura Explore{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container between">
+    <div><p class="eyebrow">Admin</p><h1>Destination records</h1><p>Add, edit, verify and publish the destinations that drive every public page.</p></div>
+    <a class="btn btn--primary" href="{{ url_for('admin.place_new') }}">{{ icon("plus", 18) }} Add destination</a>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container admin-layout">
+    {% include "admin/_nav.html" %}
+    <div>
+      <form class="card" method="get" style="padding:var(--space-4);margin-bottom:var(--space-4)">
+        <div class="form-row form-row--3">
+          <div class="field"><label for="q">Search</label><input id="q" type="search" name="q" value="{{ q }}" placeholder="Name, slug or locality"></div>
+          <div class="field">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+              <option value="">All records</option>
+              <option value="published" {{ "selected" if status == "published" }}>Published</option>
+              <option value="draft" {{ "selected" if status == "draft" }}>Drafts</option>
+              <option value="unverified" {{ "selected" if status == "unverified" }}>Not yet verified</option>
+            </select>
+          </div>
+        </div>
+        <div class="cluster" style="margin-top:var(--space-3)">
+          <button class="btn btn--primary btn--sm" type="submit">Filter</button>
+          <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.places') }}">Clear</a>
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table class="data">
+          <caption class="visually-hidden">Destination records</caption>
+          <thead>
+            <tr><th scope="col">Name</th><th scope="col">Category</th><th scope="col">District</th><th scope="col">Coordinates</th><th scope="col">Status</th><th scope="col">Actions</th></tr>
+          </thead>
+          <tbody>
+            {% for place in places %}
+              <tr>
+                <td>
+                  <strong>{{ place.name }}</strong><br>
+                  <span class="text-muted" style="font-size:.8rem">/places/{{ place.slug }}</span>
+                </td>
+                <td>{{ place.category_name }}</td>
+                <td>{{ place.district_name or "—" }}</td>
+                <td>
+                  {% if place.has_coordinates %}
+                    {{ "%.4f"|format(place.latitude) }}, {{ "%.4f"|format(place.longitude) }}<br>
+                    <span class="badge {{ 'badge--verified' if place.coordinates_verified else 'badge--pending' }}">
+                      {{ "verified" if place.coordinates_verified else "approximate" }}
+                    </span>
+                  {% else %}
+                    <span class="badge badge--danger">missing</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge {{ 'badge--verified' if place.is_published else 'badge--muted' }}">{{ "Published" if place.is_published else "Draft" }}</span>
+                  {% if place.is_verified %}<span class="badge badge--verified">Verified</span>{% else %}<span class="badge badge--pending">Unverified</span>{% endif %}
+                </td>
+                <td class="actions">
+                  <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.place_edit', place_id=place.id) }}">Edit</a>
+                  <a class="btn btn--ghost btn--sm" href="{{ url_for('places.detail', slug=place.slug) }}" target="_blank" rel="noopener">Preview</a>
+                  {% if place.is_published %}
+                    <form method="post" action="{{ url_for('admin.unpublish_place', place_id=place.id) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button class="btn btn--ghost btn--sm" type="submit">Unpublish</button>
+                    </form>
+                  {% else %}
+                    <form method="post" action="{{ url_for('admin.publish_place', place_id=place.id) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button class="btn btn--secondary btn--sm" type="submit">Publish</button>
+                    </form>
+                  {% endif %}
+                  <form method="post" action="{{ url_for('admin.delete_place', place_id=place.id) }}"
+                        data-confirm="Delete “{{ place.name }}” and its itinerary links? This cannot be undone.">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn--danger btn--sm" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="6">No destination records match this filter.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

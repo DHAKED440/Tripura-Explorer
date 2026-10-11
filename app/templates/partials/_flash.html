@@ -1,0 +1,14 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-stack" id="flash-stack" role="status" aria-live="polite">
+      {% for category, message in messages %}
+        {% set kind = "alert--error" if category == "error" else ("alert--success" if category == "success" else ("alert--warning" if category == "warning" else "alert--info")) %}
+        <div class="alert {{ kind }}">
+          {{ icon("alert" if category in ["error", "warning"] else ("check" if category == "success" else "info"), 18) }}
+          <span>{{ message }}</span>
+          <button type="button" class="icon-button" style="margin-left:auto;width:26px;height:26px" data-dismiss-flash aria-label="Dismiss message">{{ icon("close", 14) }}</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}

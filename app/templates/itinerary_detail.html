@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}{{ itinerary.title }} — Tripura Explore{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <ol class="breadcrumb">
+      <li><a href="{{ url_for('itineraries.my_trips') }}">Saved trips</a></li>
+      <li>/ <span>{{ itinerary.title }}</span></li>
+    </ol>
+    <div class="between" style="align-items:flex-start">
+      <div>
+        <h1>{{ itinerary.title }}</h1>
+        <p>
+          {{ itinerary.duration_days }} day{{ "" if itinerary.duration_days == 1 else "s" }} starting from
+          {{ itinerary.starting_location }}{% if itinerary.travel_date %} on {{ itinerary.travel_date.strftime("%d %B %Y") }}{% endif %}.
+          {{ itinerary.generation_notes or "" }}
+        </p>
+        <div class="tag-row">
+          {% for interest in itinerary.interests_list %}<span class="chip" style="cursor:default">{{ interest }}</span>{% endfor %}
+          {% if itinerary.budget %}<span class="chip" style="cursor:default">Budget ₹{{ itinerary.budget }}</span>{% endif %}
+        </div>
+      </div>
+      <div class="cluster">
+        <form method="post" action="{{ url_for('itineraries.toggle_share', itinerary_id=itinerary.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn--secondary btn--sm" type="submit">{{ icon("share", 16) }} {{ "Stop sharing" if itinerary.is_shared else "Share read-only link" }}</button>
+        </form>
+        <form method="post" action="{{ url_for('itineraries.delete_itinerary_form', itinerary_id=itinerary.id) }}"
+              data-confirm="Delete “{{ itinerary.title }}”? This cannot be undone.">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn--danger btn--sm" type="submit">{{ icon("trash", 16) }} Delete trip</button>
+        </form>
+      </div>
+    </div>
+
+    {% if itinerary.is_shared and itinerary.share_token %}
+      <div class="alert alert--info mt-4">{{ icon("share", 18) }}
+        <div>
+          <strong>Read-only link active.</strong>
+          <div class="copy-field mt-4">
+            <label class="visually-hidden" for="share-link">Share link</label>
+            <input id="share-link" type="text" readonly value="{{ url_for('itineraries.shared_itinerary', token=itinerary.share_token, _external=True) }}">
+            <button class="btn btn--ghost btn--sm" type="button" data-copy-target="#share-link">Copy</button>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container detail-grid">
+    <div id="itinerary-root" data-itinerary-id="{{ itinerary.id }}" data-api-base="/api/itineraries/{{ itinerary.id }}">
+      <div id="itinerary-status" role="status" aria-live="polite"></div>
+
+      {% if itinerary.stops %}
+        <div class="grid grid--2" id="itinerary-days">
+          {% for day, stops in itinerary.stops_by_day().items() %}
+            <div class="day-column" data-day="{{ day }}">
+              <div class="between">
+                <h3 style="margin:0">Day {{ day }}</h3>
+                <span class="badge badge--muted" data-day-count>{{ stops|length }} stop{{ "" if stops|length == 1 else "s" }}</span>
+              </div>
+              <ul class="timeline" style="margin-top:var(--space-4)" data-sortable-day="{{ day }}">
+                {% for stop in stops %}
+                  <li class="timeline__item" data-stop-id="{{ stop.id }}" draggable="true">
+                    <button class="drag-handle" type="button" aria-label="Reorder stop">{{ icon("drag", 16) }}</button>
+                    <div class="timeline__body">
+                      <div class="between" style="align-items:flex-start">
+                        <div>
+                          <h4 style="margin:0;font-size:1rem">
+                            <a href="{{ url_for('places.detail', slug=stop.place.slug) }}">{{ stop.place.name }}</a>
+                          </h4>
+                          <p class="text-muted" style="font-size:.84rem;margin:4px 0 0">
+                            {{ stop.place.category_name }}{% if stop.place.locality %} · {{ stop.place.locality }}{% endif %}
+                          </p>
+                        </div>
+                        <button class="icon-button" type="button" data-remove-stop="{{ stop.id }}"
+                                aria-label="Remove {{ stop.place.name }} from the trip">{{ icon("trash", 16) }}</button>
+                      </div>
+                      <div class="cluster" style="margin-top:10px">
+                        <label class="text-muted" style="font-size:.82rem" for="day-move-{{ stop.id }}">Day</label>
+                        <select id="day-move-{{ stop.id }}" data-move-stop="{{ stop.id }}" style="width:auto;padding:6px 10px">
+                          {% for option in range(1, itinerary.duration_days + 1) %}
+                            <option value="{{ option }}" {{ "selected" if option == stop.day_number }}>{{ option }}</option>
+                          {% endfor %}
+                        </select>
+                        {% if stop.place.directions_url %}
+                          <a class="btn btn--ghost btn--sm" href="{{ stop.place.directions_url }}" target="_blank" rel="noopener noreferrer">{{ icon("compass", 15) }} Directions</a>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endfor %}
+        </div>
+        <p class="text-muted mt-4" style="font-size:.85rem">
+          Drag a stop to reorder it inside a day, or change the day from the dropdown. Changes are saved to your account immediately.
+        </p>
+      {% else %}
+        <div class="empty-state">
+          <h3>This trip has no stops</h3>
+          <p>Every stop was removed, or the planner found no matching destination. Regenerate the plan with the form
+            on the right.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <aside>
+      <div class="card sticky-card" style="padding:var(--space-4)">
+        <h3 style="margin-top:0">Trip settings</h3>
+        <form class="form" method="post" action="{{ url_for('itineraries.update_settings', itinerary_id=itinerary.id) }}">
+          {{ form.csrf_token }}
+          <div class="field">
+            <label for="{{ form.title.id }}">Trip title</label>
+            {{ form.title() }}
+            {% for error in form.title.errors %}<span class="error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="field">
+            <label for="{{ form.starting_location.id }}">Starting location</label>
+            {{ form.starting_location() }}
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="{{ form.duration_days.id }}">Days</label>
+              {{ form.duration_days() }}
+            </div>
+            <div class="field">
+              <label for="{{ form.budget.id }}">Budget (INR)</label>
+              {{ form.budget() }}
+            </div>
+          </div>
+          <div class="field">
+            <label for="{{ form.travel_date.id }}">Travel date</label>
+            {{ form.travel_date() }}
+          </div>
+          <button class="btn btn--primary btn--block" type="submit">{{ icon("check", 18) }} Save trip settings</button>
+          <p class="text-muted" style="font-size:.8rem;margin:0">
+            Changing the number of days removes stops that fall outside the new duration. Renaming and dates never
+            change the stops.
+          </p>
+        </form>
+
+        <hr class="divider">
+        <h3 style="font-size:1rem">Need a different plan?</h3>
+        <p class="text-muted" style="font-size:.88rem">Generate a fresh suggestion with new interests, then save it as a separate trip.</p>
+        <a class="btn btn--secondary btn--block" href="{{ url_for('itineraries.trip_planner') }}">{{ icon("compass", 18) }} Open the planner</a>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script id="itinerary-config" type="application/json">{{ {"apiBase": "/api/itineraries/" ~ itinerary.id, "maxPerDay": 3}|tojson }}</script>
+<script src="{{ url_for('static', filename='js/itinerary.js') }}" defer></script>
+{% endblock %}

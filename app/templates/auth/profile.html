@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% from "partials/_place_card.html" import place_card with context %}
+{% block title %}Your profile — Tripura Explore{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container profile-header">
+    <div class="avatar" aria-hidden="true">{{ (current_user.first_name or current_user.email)[0]|upper }}</div>
+    <div>
+      <p class="eyebrow">Profile</p>
+      <h1 style="font-size:1.7rem;margin-bottom:4px">{{ current_user.name }}</h1>
+      <p class="text-muted mb-0">{{ current_user.email }} · {{ "Administrator" if current_user.is_admin else "Traveller" }} account</p>
+    </div>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container">
+    <div class="between" style="margin-bottom:var(--space-4)">
+      <h2 style="margin:0">Saved trips</h2>
+      <a class="btn btn--secondary btn--sm" href="{{ url_for('itineraries.trip_planner') }}">Plan a new trip</a>
+    </div>
+    {% if trips %}
+      <div class="grid grid--2">
+        {% for trip in trips %}
+          <article class="card" style="padding:var(--space-4)">
+            <h3 class="card__title" style="font-size:1.05rem"><a href="{{ url_for('itineraries.itinerary_detail', itinerary_id=trip.id) }}">{{ trip.title }}</a></h3>
+            <p class="text-muted" style="font-size:.87rem;margin:0">
+              {{ trip.duration_days }} day{{ "" if trip.duration_days == 1 else "s" }} · {{ trip.stops|length }} stop{{ "" if trip.stops|length == 1 else "s" }}
+            </p>
+          </article>
+        {% endfor %}
+      </div>
+      <p class="mt-4"><a href="{{ url_for('itineraries.my_trips') }}">Open the saved trips page {{ icon("arrow-right", 14) }}</a></p>
+    {% else %}
+      <div class="empty-state">
+        <h3>No saved trips yet</h3>
+        <p>Your generated plans appear here after you press “Save this itinerary”.</p>
+        <a class="btn btn--primary" href="{{ url_for('itineraries.trip_planner') }}">Open the trip planner</a>
+      </div>
+    {% endif %}
+
+    <h2 class="mt-6">Favourites</h2>
+    {% if favorites %}
+      <div class="grid grid--3">
+        {% for favorite in favorites %}{{ place_card(favorite.place, is_favorite=True) }}{% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <h3>No favourites yet</h3>
+        <p>Use the heart button on a destination card or details page to keep it here.</p>
+        <a class="btn btn--primary" href="{{ url_for('places.explore') }}">Explore destinations</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

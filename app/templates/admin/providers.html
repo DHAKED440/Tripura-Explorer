@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}Providers — Admin — Tripura Explore{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container between">
+    <div><p class="eyebrow">Admin</p><h1>Local providers</h1><p>Only approved listings appear on the public Local Experiences page.</p></div>
+    <a class="btn btn--primary" href="{{ url_for('admin.provider_new') }}">{{ icon("plus", 18) }} Add provider</a>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container admin-layout">
+    {% include "admin/_nav.html" %}
+    <div>
+      <div class="cluster" style="margin-bottom:var(--space-4)">
+        <a class="chip {{ 'is-active' if not status }}" href="{{ url_for('admin.providers') }}">All</a>
+        {% for value in ["pending", "approved", "rejected"] %}
+          <a class="chip {{ 'is-active' if status == value }}" href="{{ url_for('admin.providers', status=value) }}">{{ value|capitalize }}</a>
+        {% endfor %}
+      </div>
+
+      <div class="table-wrap">
+        <table class="data">
+          <caption class="visually-hidden">Local provider listings</caption>
+          <thead><tr><th scope="col">Provider</th><th scope="col">Type</th><th scope="col">District</th><th scope="col">Status</th><th scope="col">Inquiries</th><th scope="col">Actions</th></tr></thead>
+          <tbody>
+            {% for provider in providers %}
+              <tr>
+                <td><strong>{{ provider.name }}</strong><br><span class="text-muted" style="font-size:.8rem">{{ provider.status_note or "" }}</span></td>
+                <td>{{ provider.category }}</td>
+                <td>{{ provider.district.name if provider.district else "—" }}</td>
+                <td><span class="badge {{ 'badge--verified' if provider.is_approved else ('badge--pending' if provider.approval_status == 'pending' else 'badge--danger') }}">{{ provider.approval_status }}</span></td>
+                <td>{{ provider.inquiries.count() }}</td>
+                <td class="actions">
+                  <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.provider_edit', provider_id=provider.id) }}">Edit</a>
+                  {% if not provider.is_approved %}
+                    <form method="post" action="{{ url_for('admin.approve_provider', provider_id=provider.id) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button class="btn btn--secondary btn--sm" type="submit">Approve</button>
+                    </form>
+                  {% else %}
+                    <form method="post" action="{{ url_for('admin.reject_provider', provider_id=provider.id) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button class="btn btn--danger btn--sm" type="submit">Unapprove</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="6">No providers yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

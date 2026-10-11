@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}Create account — Tripura Explore{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="auth-card">
+      <p class="eyebrow">Account</p>
+      <h1 style="font-size:1.6rem">Create your account</h1>
+      <p class="text-muted">Passwords are stored as salted hashes. We only ask for a name and email address.</p>
+
+      <form class="form" method="post" novalidate>
+        {{ form.csrf_token }}
+        <div class="field">
+          <label for="{{ form.name.id }}">{{ form.name.label.text }}</label>
+          {{ form.name(autocomplete="name", required=True) }}
+          {% for error in form.name.errors %}<span class="error">{{ error }}</span>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="{{ form.email.id }}">{{ form.email.label.text }}</label>
+          {{ form.email(autocomplete="email", required=True, type="email") }}
+          {% for error in form.email.errors %}<span class="error">{{ error }}</span>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="{{ form.password.id }}">{{ form.password.label.text }}</label>
+          {{ form.password(autocomplete="new-password", required=True) }}
+          <span class="hint">At least 8 characters.</span>
+          {% for error in form.password.errors %}<span class="error">{{ error }}</span>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="{{ form.confirm_password.id }}">{{ form.confirm_password.label.text }}</label>
+          {{ form.confirm_password(autocomplete="new-password", required=True) }}
+          {% for error in form.confirm_password.errors %}<span class="error">{{ error }}</span>{% endfor %}
+        </div>
+        <button class="btn btn--primary btn--block" type="submit">{{ icon("check", 18) }} {{ form.submit.label.text }}</button>
+      </form>
+
+      <hr class="divider">
+      <p class="text-muted mb-0">Already registered? <a href="{{ url_for('auth.login') }}">Sign in instead</a>.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

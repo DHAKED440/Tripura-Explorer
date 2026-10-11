@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Something went wrong — Tripura Explore{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="empty-state" style="max-width:640px;margin:0 auto">
+      <p class="eyebrow">500</p>
+      <h1>Something went wrong on our side</h1>
+      <p>The error has been logged. Please try again — if it keeps happening, use the “Report an issue” tab on the
+        destination page or contact the site administrator.</p>
+      <a class="btn btn--primary" href="{{ url_for('main.home') }}">Back to the homepage</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

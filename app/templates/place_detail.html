@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}{{ place.name }} — Tripura Explore{% endblock %}
+{% block description %}{{ place.short_description or place.tagline or place.name }}{% endblock %}
+
+{% block content %}
+<section class="detail-hero">
+  <div class="container">
+    <ol class="breadcrumb">
+      <li><a href="{{ url_for('main.home') }}">Home</a></li>
+      <li>/ <a href="{{ url_for('places.explore') }}">Explore</a></li>
+      <li>/ <span>{{ place.name }}</span></li>
+    </ol>
+    <div class="detail-grid">
+      <div>
+        <div class="cluster" style="margin-bottom:8px">
+          <span class="badge">{{ place.category_name or "Uncategorised" }}</span>
+          {% if place.is_verified %}
+            <span class="badge badge--verified">{{ icon("check", 14) }} Verified record</span>
+          {% else %}
+            <span class="badge badge--pending">{{ icon("alert", 14) }} Data pending verification</span>
+          {% endif %}
+          {% if place.district_name %}<span class="badge badge--muted">{{ place.district_name }}</span>{% endif %}
+        </div>
+        <h1>{{ place.name }}</h1>
+        <p style="font-size:1.05rem">{{ place.tagline or place.short_description }}</p>
+        <div class="cluster">
+          {% if place.locality %}<span class="text-muted">{{ icon("pin", 16) }} {{ place.locality }}{% if place.district_name %}, {{ place.district_name }}{% endif %}</span>{% endif %}
+          {% if place.typical_visit_hours %}<span class="text-muted">{{ icon("clock", 16) }} about {{ place.typical_visit_hours|round(1) }} hours</span>{% endif %}
+          {% if place.map_ready %}
+            <span class="text-muted">{{ icon("map", 16) }} {{ "%.4f"|format(place.latitude) }}, {{ "%.4f"|format(place.longitude) }}
+              {% if not place.coordinates_verified %}<span class="badge badge--pending">approximate</span>{% endif %}
+            </span>
+          {% else %}
+            <span class="text-muted">{{ icon("map", 16) }} coordinates not recorded yet</span>
+          {% endif %}
+        </div>
+      </div>
+      <div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container detail-grid">
+    <div>
+      <div class="detail-media">
+        <img src="{{ place.image_url or url_for('static', filename='images/place-placeholder.svg') }}"
+             alt="{{ place.image_alt or place.name }}" width="900" height="675">
+      </div>
+      {% if place.gallery and place.gallery|length > 1 %}
+        <div class="gallery">
+          {% for image in place.gallery[:3] %}
+            <img src="{{ image.url }}" alt="{{ image.alt or place.name }}" loading="lazy" height="140">
+          {% endfor %}
+        </div>
+      {% endif %}
+      <p class="text-muted" style="font-size:.82rem;margin-top:8px">
+        {{ icon("info", 14) }} Prototype imagery: the illustrations are placeholders generated for this build.
+        Replace them with licensed photographs before launch.
+      </p>
+
+      <nav class="tabs" role="tablist" aria-label="Destination information">
+        <button class="tab-button" role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true">Overview</button>
+        <button class="tab-button" role="tab" id="tab-travel" aria-controls="panel-travel" aria-selected="false">Travel information</button>
+        <button class="tab-button" role="tab" id="tab-nearby" aria-controls="panel-nearby" aria-selected="false">Nearby</button>
+        <button class="tab-button" role="tab" id="tab-data" aria-controls="panel-data" aria-selected="false">Data &amp; sources</button>
+        <button class="tab-button" role="tab" id="tab-report" aria-controls="panel-report" aria-selected="false">Report an issue</button>
+      </nav>
+
+      <div class="tab-panel" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
+        <p>{{ place.description or place.short_description or "A description for this destination is still being written." }}</p>
+        {% if place.tag_list %}
+          <div class="tag-row">
+            {% for tag in place.tag_list %}<span class="chip" style="cursor:default">{{ tag }}</span>{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="tab-panel" id="panel-travel" role="tabpanel" aria-labelledby="tab-travel" hidden>
+        {% if travel_hints %}
+          <dl class="fact-list">
+            {% for hint in travel_hints %}
+              <div class="fact"><dt>{{ hint.label }}</dt><dd>{{ hint.value }}</dd></div>
+            {% endfor %}
+          </dl>
+        {% endif %}
+        {% if not place.entry_fee_indian and not place.entry_fee_foreign %}
+          <div class="alert alert--warning mt-4">{{ icon("alert", 18) }}
+            <span>Entry fees are not published on this prototype because they have not been verified with the
+            managing authority yet. Confirm locally before travelling.</span>
+          </div>
+        {% endif %}
+        {% if not place.opening_info %}
+          <div class="alert alert--warning">{{ icon("alert", 18) }}
+            <span>Opening hours and closed days are not verified for this destination yet.</span>
+          </div>
+        {% endif %}
+        {% if place.safety_notes %}
+          <div class="notice mt-4"><strong>{{ icon("shield", 16) }} Safety notes</strong><p class="mb-0">{{ place.safety_notes }}</p></div>
+        {% endif %}
+      </div>
+
+      <div class="tab-panel" id="panel-nearby" role="tabpanel" aria-labelledby="tab-nearby" hidden>
+        {% if nearby %}
+          <div class="grid grid--2">
+            {% for item in nearby %}
+              {% set nearby_place = item[0] %}
+              {% set distance = item[1] %}
+              <article class="card" style="padding:var(--space-4)">
+                <h3 class="card__title" style="font-size:1.02rem"><a href="{{ url_for('places.detail', slug=nearby_place.slug) }}">{{ nearby_place.name }}</a></h3>
+                <p class="text-muted" style="font-size:.88rem;margin:0 0 6px">{{ nearby_place.category_name }}{% if nearby_place.district_name %} · {{ nearby_place.district_name }}{% endif %}</p>
+                {% if distance is not none %}
+                  <span class="badge badge--muted">≈ {{ distance|round(1) }} km straight line</span>
+                {% else %}
+                  <span class="badge badge--muted">Same area</span>
+                {% endif %}
+              </article>
+            {% endfor %}
+          </div>
+          <p class="text-muted mt-4" style="font-size:.85rem">Straight-line distance is not a road distance. Use the directions links to check the real journey.</p>
+        {% else %}
+          <div class="empty-state"><h3>No nearby destinations recorded</h3><p>Nearby suggestions appear once coordinates and districts are filled in for more records.</p></div>
+        {% endif %}
+      </div>
+
+      <div class="tab-panel" id="panel-data" role="tabpanel" aria-labelledby="tab-data" hidden>
+        <dl class="fact-list">
+          <div class="fact"><dt>Verified</dt><dd>{{ "Yes — " ~ place.verified_by if place.is_verified and place.verified_by else "Not yet verified" }}</dd></div>
+          <div class="fact"><dt>Last verified</dt><dd>{{ place.last_verified_at.strftime("%d %B %Y") if place.last_verified_at else "—" }}</dd></div>
+          <div class="fact"><dt>Coordinates</dt><dd>{{ "Approximate" if place.has_coordinates and not place.coordinates_verified else ("Field verified" if place.coordinates_verified else "Not recorded") }}</dd></div>
+          <div class="fact"><dt>Record updated</dt><dd>{{ place.updated_at.strftime("%d %B %Y") if place.updated_at else "—" }}</dd></div>
+        </dl>
+        {% if place.coordinate_source %}<p class="text-muted mt-4" style="font-size:.88rem"><strong>Coordinate source:</strong> {{ place.coordinate_source }}</p>{% endif %}
+        {% if place.verification_notes %}<p class="text-muted" style="font-size:.88rem"><strong>Verification notes:</strong> {{ place.verification_notes }}</p>{% endif %}
+        {% if place.source_note %}<p class="text-muted" style="font-size:.88rem"><strong>Source note:</strong> {{ place.source_note }}</p>{% endif %}
+      </div>
+
+      <div class="tab-panel" id="panel-report" role="tabpanel" aria-labelledby="tab-report" hidden>
+        <h3 id="report">Report incorrect information</h3>
+        <p class="text-muted">Spotted a wrong fee, name or location? Send a note — an administrator reviews every report.</p>
+        <form class="form" method="post" action="{{ url_for('places.report_problem', slug=place.slug) }}">
+          {{ correction_form.csrf_token }}
+          <div class="field">
+            <label for="{{ correction_form.message.id }}">{{ correction_form.message.label.text }}</label>
+            {{ correction_form.message(rows=4, class="", required=True, minlength=10) }}
+            {% for error in correction_form.message.errors %}<span class="error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="field">
+            <label for="{{ correction_form.reporter_email.id }}">{{ correction_form.reporter_email.label.text }}</label>
+            {{ correction_form.reporter_email() }}
+            {% for error in correction_form.reporter_email.errors %}<span class="error">{{ error }}</span>{% endfor %}
+          </div>
+          <button class="btn btn--primary" type="submit">{{ icon("mail", 18) }} Send report</button>
+        </form>
+      </div>
+    </div>
+
+    <aside>
+      <div class="card sticky-card" style="padding:var(--space-4)">
+        <h3 style="margin-top:0">Plan with this place</h3>
+        <div class="stack">
+          {% if place.directions_url %}
+            <a class="btn btn--primary btn--block" href="{{ place.directions_url }}" target="_blank" rel="noopener noreferrer">
+              {{ icon("compass", 18) }} Get directions
+            </a>
+          {% endif %}
+
+          {% if current_user.is_authenticated %}
+            <form method="post" action="{{ url_for('itineraries.add_place_to_trip') }}" class="stack">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="slug" value="{{ place.slug }}">
+              <div class="field">
+                <label for="itinerary_id">Add to a saved trip</label>
+                {% set trips = current_user.itineraries.all() %}
+                {% if trips %}
+                  <select id="itinerary_id" name="itinerary_id" required>
+                    {% for trip in trips %}
+                      <option value="{{ trip.id }}">{{ trip.title }} ({{ trip.duration_days }} day{{ "" if trip.duration_days == 1 else "s" }})</option>
+                    {% endfor %}
+                  </select>
+                {% else %}
+                  <p class="hint">You have no saved trips yet. Generate a plan first — it takes a few seconds.</p>
+                {% endif %}
+              </div>
+              {% if trips %}
+                <button class="btn btn--secondary btn--block" type="submit">{{ icon("plus", 18) }} Add to trip</button>
+              {% else %}
+                <a class="btn btn--secondary btn--block" href="{{ url_for('itineraries.trip_planner', place=place.slug) }}">{{ icon("plus", 18) }} Start a trip plan</a>
+              {% endif %}
+            </form>
+
+            <form method="post" action="{{ url_for('auth.toggle_favorite_form', slug=place.slug) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn--ghost btn--block favorite-button {{ 'is-active' if is_favorite }}" type="submit">
+                {{ icon("heart", 18) }} {{ "Saved to favourites" if is_favorite else "Save to favourites" }}
+              </button>
+            </form>
+          {% else %}
+            <a class="btn btn--secondary btn--block" href="{{ url_for('itineraries.trip_planner', place=place.slug) }}">
+              {{ icon("plus", 18) }} Add to a trip plan
+            </a>
+            <a class="btn btn--ghost btn--block" href="{{ url_for('auth.login', next=url_for('places.detail', slug=place.slug)) }}">
+              {{ icon("heart", 18) }} Sign in to save favourites
+            </a>
+          {% endif %}
+        </div>
+
+        <hr class="divider">
+
+        <h3 style="font-size:1rem">Quick facts</h3>
+        <dl class="fact-list">
+          <div class="fact"><dt>Category</dt><dd>{{ place.category_name or "—" }}</dd></div>
+          <div class="fact"><dt>District</dt><dd>{{ place.district_name or "—" }}</dd></div>
+          <div class="fact"><dt>Locality</dt><dd>{{ place.locality or "—" }}</dd></div>
+          <div class="fact"><dt>Best season</dt><dd>{{ place.best_season or "Not verified" }}</dd></div>
+          <div class="fact"><dt>Entry fee</dt><dd>{{ place.entry_fee_indian or "Not verified" }}</dd></div>
+          <div class="fact"><dt>Opening hours</dt><dd>{{ place.opening_info or "Not verified" }}</dd></div>
+          <div class="fact"><dt>Facilities</dt><dd>{{ place.facilities or "Not recorded" }}</dd></div>
+        </dl>
+
+        {% if place.map_ready %}
+          <hr class="divider">
+          <h3 style="font-size:1rem">Location</h3>
+          <div id="place-map" style="height:220px;border-radius:var(--radius);overflow:hidden"
+               data-lat="{{ place.latitude }}" data-lng="{{ place.longitude }}"
+               data-name="{{ place.name }}" data-approximate="{{ 'true' if not place.coordinates_verified else 'false' }}"></div>
+          {% if not place.coordinates_verified %}
+            <p class="text-muted" style="font-size:.8rem;margin-top:8px">Marker shows an approximate location, pending field GPS verification.</p>
+          {% endif %}
+        {% else %}
+          <div class="alert alert--info" style="margin-top:var(--space-3)">{{ icon("info", 18) }}
+            <span>Coordinates for this destination have not been recorded, so it is not shown on the map.</span>
+          </div>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+</section>
+
+{% if also_like %}
+<section class="section section--ivory">
+  <div class="container">
+    <div class="section-head">
+      <div><p class="eyebrow">You may also like</p><h2>More {{ place.category_name|lower }} destinations</h2></div>
+      <a class="btn btn--ghost" href="{{ url_for('places.explore', category=place.category.slug) }}">See category {{ icon("arrow-right", 16) }}</a>
+    </div>
+    <div class="grid grid--3">
+      {% for item in also_like %}
+        {% from "partials/_place_card.html" import place_card with context %}
+        {{ place_card(item) }}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script id="map-settings" type="application/json">{{ map_settings|tojson }}</script>
+<script src="{{ url_for('static', filename='js/map.js') }}" defer></script>
+{% endblock %}

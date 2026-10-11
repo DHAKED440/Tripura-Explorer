@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% from "partials/_place_card.html" import place_card with context %}
+{% block title %}Explore destinations — Tripura Explore{% endblock %}
+{% block description %}Search and filter {{ total }} published destinations by category, district and keyword.{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <p class="eyebrow">Explore</p>
+    <h1>Destinations in Tripura</h1>
+    <p>
+      {{ total }} published destination{{ "" if total == 1 else "s" }} match your filters.
+      Filters are stored in the page address, so any filtered view can be bookmarked or shared.
+    </p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container">
+    <form class="card" method="get" action="{{ url_for('places.explore') }}" id="filter-form" style="padding:var(--space-4);margin-bottom:var(--space-5)">
+      <div class="form-row form-row--3">
+        <div class="field">
+          <label for="q">Keyword</label>
+          <input id="q" type="search" name="q" value="{{ filters.q }}" placeholder="Name, locality or description">
+        </div>
+        <div class="field">
+          <label for="category">Category</label>
+          <select id="category" name="category">
+            <option value="">All categories</option>
+            {% for category in categories %}
+              <option value="{{ category.slug }}" {{ "selected" if filters.category == category.slug }}>{{ category.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="district">District</label>
+          <select id="district" name="district">
+            <option value="">All districts</option>
+            {% for district in districts %}
+              <option value="{{ district.slug }}" {{ "selected" if filters.district|lower in [district.slug, district.name|lower] }}>{{ district.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="sort">Sort by</label>
+          <select id="sort" name="sort">
+            {% for key, option in sort_options.items() %}
+              <option value="{{ key }}" {{ "selected" if filters.sort == key }}>{{ option[0] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="cluster" style="margin-top:var(--space-3)">
+        <button class="btn btn--primary" type="submit" data-filter-submit>{{ icon("search", 18) }} Apply filters</button>
+        <a class="btn btn--ghost" href="{{ url_for('places.explore') }}">{{ icon("close", 16) }} Clear filters</a>
+        {% if filters.q or filters.category or filters.district %}
+          <span class="badge badge--muted">Filtered view</span>
+        {% endif %}
+      </div>
+    </form>
+
+    {% for error in filters.errors %}
+      <div class="alert alert--warning" role="alert">{{ icon("alert", 18) }}<span>{{ error }}</span></div>
+    {% endfor %}
+
+    <div id="results-region" aria-live="polite">
+      {% if places %}
+        <div class="grid grid--3">
+          {% for place in places %}{{ place_card(place, is_favorite=place.id in favorite_ids) }}{% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <h3>No destinations match these filters</h3>
+          <p>
+            Try a different keyword or clear the category and district filters. Every published destination is
+            also available on the <a href="{{ url_for('map.map_page') }}">interactive map</a>.
+          </p>
+          <a class="btn btn--primary" href="{{ url_for('places.explore') }}">Clear filters</a>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if pages and pages > 1 %}
+      {% set params = filters.as_query_params() %}
+      <nav class="pagination" aria-label="Pagination">
+        {% if filters.page > 1 %}
+          <a href="{{ url_for('places.explore', page=filters.page - 1, **params) }}">Previous</a>
+        {% else %}
+          <span class="is-disabled">Previous</span>
+        {% endif %}
+        {% for number in range(1, pages + 1) %}
+          {% if number == filters.page %}
+            <span class="is-current" aria-current="page">{{ number }}</span>
+          {% else %}
+            <a href="{{ url_for('places.explore', page=number, **params) }}">{{ number }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if filters.page < pages %}
+          <a href="{{ url_for('places.explore', page=filters.page + 1, **params) }}">Next</a>
+        {% else %}
+          <span class="is-disabled">Next</span>
+        {% endif %}
+      </nav>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/explore.js') }}" defer></script>
+{% endblock %}

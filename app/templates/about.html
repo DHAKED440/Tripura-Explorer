@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}About the prototype — Tripura Explore{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <p class="eyebrow">About</p>
+    <h1>Tripura Explore prototype</h1>
+    <p>
+      A working tourism discovery and trip-planning prototype for Tripura, India: {{ published_count }} published
+      destinations, {{ categories|length }} categories, {{ districts|length }} districts, an interactive map, a
+      rule-based trip planner, saved trips, a local-experience directory and an administrator dashboard.
+    </p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container grid grid--2">
+    <div>
+      <h2 id="data">Data and verification policy</h2>
+      <p>
+        The prototype follows four rules that come from the project's data-collection report:
+      </p>
+      <ol>
+        <li><strong>One record per destination.</strong> The homepage, Explore page, map, planner and details page all
+          read the same database row, so a fact is never typed twice.</li>
+        <li><strong>Unknown stays unknown.</strong> Entry fees, opening hours, closed days and best seasons are left
+          blank until the managing authority confirms them. Unknown values are shown as “Not verified”.</li>
+        <li><strong>Coordinates are labelled.</strong> Approximate coordinates are marked “approximate” on the map and
+          on the details page. Distances are straight-line estimates, never claimed as road distances.</li>
+        <li><strong>Demo content is labelled.</strong> Provider listings, cultural descriptions and the illustrations
+          are prototype placeholders and say so on screen.</li>
+      </ol>
+
+      <h2 class="mt-6">What still has to be verified</h2>
+      <ul>
+        <li>District assignment for each destination, using official district records.</li>
+        <li>Field GPS coordinates for the main entrance of every destination.</li>
+        <li>Entry fees, camera and vehicle charges, opening hours, closed days and seasonal changes.</li>
+        <li>Licensed photographs, with credit and licence recorded per image.</li>
+        <li>Approved local providers, verified contact details and indicative prices.</li>
+        <li>Community review of every cultural description before publication.</li>
+      </ul>
+      <p class="text-muted">
+        See <code>docs/DATA-VERIFICATION.md</code> in the repository for the working checklist.
+      </p>
+    </div>
+
+    <div>
+      <div class="card" style="padding:var(--space-5)">
+        <h2 style="font-size:1.15rem;margin-top:0">How the trip planner decides</h2>
+        <ol class="text-muted">
+          <li>Validate the duration (1–3 days), start point and interests.</li>
+          <li>Select published destinations whose category or tags match the interests.</li>
+          <li>Rank them by interest matches and popularity, preferring records with coordinates.</li>
+          <li>Group them by straight-line proximity (45 km) or by district when coordinates are missing.</li>
+          <li>Spread the groups over the requested days, maximum three stops per day.</li>
+        </ol>
+        <div class="alert alert--warning">{{ icon("alert", 18) }}
+          <span>No route optimisation and no travel-time estimates are produced. Directions links open an external
+            navigation service so you can check real driving times.</span>
+        </div>
+      </div>
+
+      <div class="card mt-4" style="padding:var(--space-5)" id="contact">
+        <h2 style="font-size:1.15rem;margin-top:0">Report an issue or get in touch</h2>
+        <p class="text-muted">
+          Found a wrong destination, an incorrect label or a missing local provider? Open the destination page and use
+          the “Report an issue” tab — reports are stored in the database and reviewed in the admin dashboard.
+        </p>
+        <a class="btn btn--primary" href="{{ url_for('places.explore') }}">Find a destination to report {{ icon("arrow-right", 16) }}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--ivory">
+  <div class="container">
+    <h2>Known limitations of this build</h2>
+    <div class="grid grid--3">
+      <div class="highlight-card"><h3>Placeholder imagery</h3><p>Destination pictures are generated illustrations. Licensed photographs still have to be collected.</p></div>
+      <div class="highlight-card"><h3>No prices or hours</h3><p>Fees, timings and typical visit lengths are blank until they are verified, so the planner cannot estimate cost or time.</p></div>
+      <div class="highlight-card"><h3>Approximate coordinates</h3><p>Map markers use approximate coordinates flagged in the interface; field GPS readings are still outstanding.</p></div>
+      <div class="highlight-card"><h3>Demo providers</h3><p>The experience directory contains demo listings, not real businesses. No bookings or payments exist.</p></div>
+      <div class="highlight-card"><h3>No reviews or ratings</h3><p>Reviews need moderation and abuse prevention, so no rating is displayed anywhere in the product.</p></div>
+      <div class="highlight-card"><h3>Public tile server</h3><p>OpenStreetMap tiles are used for the prototype. Production needs a dedicated tile provider.</p></div>
+    </div>
+  </div>
+</section>
+{% endblock %}

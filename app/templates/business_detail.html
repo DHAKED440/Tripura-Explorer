@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}{{ provider.name }} — Local experience — Tripura Explore{% endblock %}
+{% block description %}{{ provider.short_description or provider.name }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <ol class="breadcrumb">
+      <li><a href="{{ url_for('experiences.index') }}">Local experiences</a></li>
+      <li>/ <span>{{ provider.name }}</span></li>
+    </ol>
+    <span class="badge">{{ provider.category }}</span>
+    <h1>{{ provider.name }}</h1>
+    <p>{{ provider.short_description }}</p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container detail-grid">
+    <div>
+      <div class="detail-media">
+        <img src="{{ provider.image_url or url_for('static', filename='images/place-placeholder.svg') }}"
+             alt="{{ provider.image_alt or provider.name }}" width="900" height="520">
+      </div>
+
+      <div class="alert alert--warning mt-4">{{ icon("alert", 18) }}
+        <span>
+          <strong>Demo listing.</strong> {{ provider.status_note or "This record was created for testing and is not a real business." }}
+          Contact details stay empty until a verified partner supplies them.
+        </span>
+      </div>
+
+      <h2>About</h2>
+      <p>{{ provider.description }}</p>
+
+      <dl class="fact-list">
+        <div class="fact"><dt>Type</dt><dd>{{ provider.category }}</dd></div>
+        <div class="fact"><dt>District</dt><dd>{{ provider.district.name if provider.district else "Not recorded" }}</dd></div>
+        <div class="fact"><dt>Locality</dt><dd>{{ provider.locality or "Not recorded" }}</dd></div>
+        <div class="fact"><dt>Languages</dt><dd>{{ provider.languages or "Not recorded" }}</dd></div>
+        <div class="fact"><dt>Indicative price</dt><dd>{{ provider.price_note or "Not supplied" }}</dd></div>
+        <div class="fact"><dt>Contact verified</dt><dd>{{ provider.verified_on.strftime("%d %B %Y") if provider.verified_on else "Not verified yet" }}</dd></div>
+      </dl>
+    </div>
+
+    <aside>
+      <div class="card sticky-card" style="padding:var(--space-4)">
+        <h2 style="font-size:1.1rem;margin-top:0">Send an inquiry</h2>
+        {% if inquiry_sent %}
+          <div class="alert alert--success">{{ icon("check", 18) }}<span>Your inquiry has been recorded. An administrator will review it.</span></div>
+        {% endif %}
+        <form class="form" method="post" action="{{ url_for('experiences.submit_inquiry_form', slug=provider.slug) }}">
+          {{ form.csrf_token }}
+          <div class="field">
+            <label for="{{ form.name.id }}">{{ form.name.label.text }}</label>
+            {{ form.name(required=True) }}
+            {% for error in form.name.errors %}<span class="error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="field">
+            <label for="{{ form.email.id }}">{{ form.email.label.text }}</label>
+            {{ form.email(required=True) }}
+            {% for error in form.email.errors %}<span class="error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="field">
+            <label for="{{ form.phone.id }}">{{ form.phone.label.text }}</label>
+            {{ form.phone() }}
+          </div>
+          <div class="field">
+            <label for="{{ form.message.id }}">{{ form.message.label.text }}</label>
+            {{ form.message(rows=4, required=True, minlength=10) }}
+            {% for error in form.message.errors %}<span class="error">{{ error }}</span>{% endfor %}
+          </div>
+          <button class="btn btn--primary btn--block" type="submit">{{ icon("mail", 18) }} Send inquiry</button>
+          <p class="text-muted" style="font-size:.8rem;margin:0">
+            We only ask for the details needed to respond. Inquiries are stored in the site database and reviewed by
+            an administrator — never shown publicly.
+          </p>
+        </form>
+
+        {% if provider.contact_phone or provider.contact_email %}
+          <hr class="divider">
+          <h3 style="font-size:1rem">Verified contact</h3>
+          {% if provider.contact_phone %}<p style="margin:0 0 6px">{{ icon("phone", 15) }} {{ provider.contact_phone }}</p>{% endif %}
+          {% if provider.contact_email %}<p style="margin:0">{{ icon("mail", 15) }} {{ provider.contact_email }}</p>{% endif %}
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+</section>
+
+{% if related %}
+<section class="section section--ivory">
+  <div class="container">
+    <div class="section-head"><div><p class="eyebrow">More like this</p><h2>Other {{ provider.category|lower }} listings</h2></div></div>
+    <div class="grid grid--3">
+      {% for item in related %}
+        <article class="card" style="padding:var(--space-4)">
+          <h3 class="card__title" style="font-size:1.05rem"><a href="{{ url_for('experiences.detail', slug=item.slug) }}">{{ item.name }}</a></h3>
+          <p class="text-muted" style="font-size:.88rem;margin:0">{{ item.locality or "" }}{% if item.district %} · {{ item.district.name }}{% endif %}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

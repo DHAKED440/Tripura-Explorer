@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}Sign in — Tripura Explore{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="auth-card">
+      <p class="eyebrow">Account</p>
+      <h1 style="font-size:1.6rem">Sign in</h1>
+      <p class="text-muted">Sign in to save trips, keep favourites and share a read-only itinerary link.</p>
+
+      <form class="form" method="post" novalidate>
+        {{ form.csrf_token }}
+        <div class="field">
+          <label for="{{ form.email.id }}">{{ form.email.label.text }}</label>
+          {{ form.email(autocomplete="email", required=True, type="email") }}
+          {% for error in form.email.errors %}<span class="error">{{ error }}</span>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="{{ form.password.id }}">{{ form.password.label.text }}</label>
+          {{ form.password(autocomplete="current-password", required=True) }}
+          {% for error in form.password.errors %}<span class="error">{{ error }}</span>{% endfor %}
+        </div>
+        <div class="field field--checkbox">
+          {{ form.remember() }}
+          <label for="{{ form.remember.id }}">{{ form.remember.label.text }}</label>
+        </div>
+        <button class="btn btn--primary btn--block" type="submit">{{ icon("check", 18) }} {{ form.submit.label.text }}</button>
+      </form>
+
+      <hr class="divider">
+      <p class="text-muted mb-0">No account yet? <a href="{{ url_for('auth.register') }}">Create one</a> — it only takes a name, email and password.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

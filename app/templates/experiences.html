@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}Local experiences — Tripura Explore{% endblock %}
+{% block description %}Homestays, local guides, restaurants, transport, handicrafts and cultural experiences in Tripura.{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <p class="eyebrow">Local experiences</p>
+    <h1>Providers and cultural experiences</h1>
+    <p>
+      An inquiry directory for local tourism providers. Listings are manually approved, and this prototype
+      never shows live availability or confirms bookings.
+    </p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container">
+    <div class="alert alert--warning">{{ icon("alert", 18) }}
+      <span>
+        <strong>Demo listings.</strong> The provider records you see below are placeholders created for testing the
+        directory and the inquiry form. They are not real businesses. Replace them with verified partners before launch.
+        {% if pending_count %}<br>{{ pending_count }} listing(s) are waiting for administrator approval and are hidden from the public.{% endif %}
+      </span>
+    </div>
+
+    <form class="card" method="get" action="{{ url_for('experiences.index') }}" style="padding:var(--space-4);margin:var(--space-4) 0">
+      <div class="form-row form-row--3">
+        <div class="field">
+          <label for="q">Search providers</label>
+          <input id="q" type="search" name="q" value="{{ filters.q }}" placeholder="Name or locality">
+        </div>
+        <div class="field">
+          <label for="category">Type</label>
+          <select id="category" name="category">
+            <option value="">All types</option>
+            {% for category in categories %}
+              <option value="{{ category }}" {{ "selected" if filters.category == category }}>{{ category }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="district">District</label>
+          <select id="district" name="district">
+            <option value="">All districts</option>
+            {% for district in districts %}
+              <option value="{{ district.slug }}" {{ "selected" if filters.district|lower in [district.slug, district.name|lower] }}>{{ district.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="cluster" style="margin-top:var(--space-3)">
+        <button class="btn btn--primary" type="submit">{{ icon("search", 18) }} Search</button>
+        <a class="btn btn--ghost" href="{{ url_for('experiences.index') }}">Clear</a>
+      </div>
+    </form>
+
+    {% for error in errors %}<div class="alert alert--warning">{{ icon("alert", 18) }}<span>{{ error }}</span></div>{% endfor %}
+
+    {% if providers %}
+      <div class="grid grid--3">
+        {% for provider in providers %}
+          <article class="card">
+            <div class="provider-card__media">
+              <img src="{{ provider.image_url or url_for('static', filename='images/place-placeholder.svg') }}"
+                   alt="{{ provider.image_alt or provider.name }}" loading="lazy">
+            </div>
+            <div class="card__body">
+              <span class="badge">{{ provider.category }}</span>
+              <h3 class="card__title"><a href="{{ url_for('experiences.detail', slug=provider.slug) }}">{{ provider.name }}</a></h3>
+              <p class="card__desc">{{ provider.short_description }}</p>
+              <p class="text-muted" style="font-size:.82rem;margin:0">
+                {{ icon("pin", 14) }} {{ provider.locality or "Locality not recorded" }}{% if provider.district %} · {{ provider.district.name }}{% endif %}
+              </p>
+              <div class="card__footer">
+                <span class="badge {{ 'badge--verified' if provider.verified_on else 'badge--muted' }}">
+                  {{ "Contact verified" if provider.verified_on else "Demo record" }}
+                </span>
+                <a class="btn btn--ghost btn--sm" href="{{ url_for('experiences.detail', slug=provider.slug) }}">Details {{ icon("arrow-right", 16) }}</a>
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <h3>No approved providers match these filters</h3>
+        <p>Provider listings only appear after an administrator approves them. Try clearing the filters.</p>
+        <a class="btn btn--primary" href="{{ url_for('experiences.index') }}">Clear filters</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section section--ivory">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Culture, crafts and food</p>
+        <h2>Editorial overview</h2>
+        <p>Wording is marked as pending community review until a representative or the culture department approves it.</p>
+      </div>
+    </div>
+    {% for kind, items in highlights.items() %}
+      <h3 style="margin-top:var(--space-5)">{{ kind }}</h3>
+      <div class="grid grid--3">
+        {% for item in items %}
+          <div class="highlight-card">
+            <h3>{{ item.name }}</h3>
+            <p>{{ item.summary }}</p>
+            <p class="text-muted" style="font-size:.8rem;margin:8px 0 0">{{ item.month }} · {{ item.place }}</p>
+            <span class="badge badge--pending" style="margin-top:8px">Pending community review</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="container grid grid--2">
+    <div class="card" style="padding:var(--space-5)">
+      <h2 style="font-size:1.2rem">How inquiries work</h2>
+      <ol style="color:var(--color-muted)">
+        <li>You send an inquiry with your contact details and a message.</li>
+        <li>The inquiry is stored in the database with the status “new”.</li>
+        <li>An administrator reviews it and passes it on to the provider.</li>
+        <li>The provider replies to you directly.</li>
+      </ol>
+      <p class="text-muted mb-0" style="font-size:.88rem">This prototype does not confirm bookings, take payments or
+        show live availability. Personal details in an inquiry are only visible to administrators.</p>
+    </div>
+    <div class="card" style="padding:var(--space-5)">
+      <h2 style="font-size:1.2rem">Are you a local provider?</h2>
+      <p class="text-muted">
+        Homestays, guides, restaurants, transport operators, handicraft groups and cultural performers can be listed
+        once the tourism department or our team has verified the contact details.
+      </p>
+      <ul class="text-muted">
+        <li>Business name, locality and district.</li>
+        <li>What you offer and the languages you speak.</li>
+        <li>Contact details you are happy to publish.</li>
+        <li>Indicative prices, if you want them shown.</li>
+      </ul>
+      <p class="text-muted mb-0" style="font-size:.88rem">Listings are added by an administrator — there is no public sign-up form in this version.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

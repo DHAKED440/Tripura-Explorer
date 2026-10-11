@@ -1,0 +1,92 @@
+{#- Server rendered itinerary result. Used by the no-JavaScript planner flow and by tests. -#}
+{% from "partials/icons.html" import icon %}
+<section aria-labelledby="plan-heading">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Suggested plan</p>
+      <h2 id="plan-heading">
+        {% set total_stops = plan.days|map(attribute='stops')|map('length')|sum %}
+        {{ plan.days|length }} day{{ "" if plan.days|length == 1 else "s" }} · {{ total_stops }} stop{{ "" if total_stops == 1 else "s" }}
+      </h2>
+      <p>
+        Starting from <strong>{{ preferences.starting_location }}</strong>
+        {% if preferences.travel_date %} on {{ preferences.travel_date.strftime("%d %B %Y") }}{% endif %}.
+        Matched interests: {{ preferences.interests|join(", ") }}.
+      </p>
+    </div>
+  </div>
+
+  {% for warning in plan.warnings %}
+    <div class="alert alert--warning">{{ icon("alert", 18) }}<span>{{ warning }}</span></div>
+  {% endfor %}
+  {% for note in plan.notes %}
+    <div class="alert alert--info">{{ icon("info", 18) }}<span>{{ note }}</span></div>
+  {% endfor %}
+
+  {% if plan.days %}
+    <div class="grid grid--2" style="margin-top:var(--space-5)">
+      {% for day in plan.days %}
+        <div class="day-column">
+          <div class="between">
+            <h3 style="margin:0">Day {{ day.day }}</h3>
+            <span class="badge badge--muted">{{ day.stops|length }} stop{{ "" if day.stops|length == 1 else "s" }}</span>
+          </div>
+          <ol class="timeline" style="margin-top:var(--space-4)">
+            {% for stop in day.stops %}
+              {% set place = stop.place %}
+              <li class="timeline__item">
+                <span class="timeline__marker">{{ stop.stop_order }}</span>
+                <div class="timeline__body">
+                  <div class="between" style="align-items:flex-start">
+                    <div>
+                      <h4 style="margin:0;font-size:1rem"><a href="{{ url_for('places.detail', slug=place.slug) }}">{{ place.name }}</a></h4>
+                      <p class="text-muted" style="font-size:.85rem;margin:4px 0 0">
+                        {{ place.category_name }}{% if place.locality %} · {{ place.locality }}{% endif %}{% if place.district_name %} · {{ place.district_name }}{% endif %}
+                      </p>
+                    </div>
+                    <img src="{{ place.image_url or url_for('static', filename='images/place-placeholder.svg') }}"
+                         alt="" width="70" height="54" style="border-radius:8px;object-fit:cover">
+                  </div>
+                  {% if stop.leg_km is not none %}
+                    <p class="text-muted" style="font-size:.82rem;margin:10px 0 0">
+                      {{ icon("map", 14) }} ≈ {{ stop.leg_km }} km straight line from the previous stop
+                    </p>
+                  {% endif %}
+                  {% if place.directions_url %}
+                    <a class="btn btn--ghost btn--sm" style="margin-top:8px" href="{{ place.directions_url }}" target="_blank" rel="noopener noreferrer">
+                      {{ icon("compass", 16) }} Directions
+                    </a>
+                  {% endif %}
+                </div>
+              </li>
+            {% endfor %}
+          </ol>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="card" style="padding:var(--space-4);margin-top:var(--space-5)">
+      <h3 style="margin-top:0">Save or regenerate</h3>
+      {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('itineraries.save_generated_plan') }}" class="cluster">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="duration_days" value="{{ preferences.duration_days }}">
+          <input type="hidden" name="starting_location" value="{{ preferences.starting_location }}">
+          {% for interest in preferences.interests %}<input type="hidden" name="interests" value="{{ interest }}">{% endfor %}
+          {% if preferences.budget is not none %}<input type="hidden" name="budget" value="{{ preferences.budget }}">{% endif %}
+          {% if preferences.travel_date %}<input type="hidden" name="travel_date" value="{{ preferences.travel_date.isoformat() }}">{% endif %}
+          <button class="btn btn--primary" type="submit">{{ icon("check", 18) }} Save this itinerary</button>
+          <button class="btn btn--ghost" type="submit" formaction="{{ url_for('itineraries.trip_planner') }}">Edit preferences</button>
+        </form>
+      {% else %}
+        <p class="text-muted">Sign in to save this plan, reorder stops and share a read-only link.</p>
+        <a class="btn btn--primary" href="{{ url_for('auth.login', next=url_for('itineraries.trip_planner')) }}">Sign in to save</a>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <h3>No matching destinations</h3>
+      <p>{{ plan.warnings[-1] if plan.warnings else "Try selecting more interests." }}</p>
+    </div>
+  {% endif %}
+</section>

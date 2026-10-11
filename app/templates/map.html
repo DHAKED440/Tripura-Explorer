@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon, category_icon %}
+{% block title %}Interactive map — Tripura Explore{% endblock %}
+{% block description %}Explore published Tripura destinations on an interactive Leaflet map with category and district filters.{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <p class="eyebrow">Map planner</p>
+    <h1>Where everything is</h1>
+    <p>
+      Every marker is a published destination record with coordinates. Markers labelled
+      <span class="badge badge--pending">approximate</span> still need a field GPS reading.
+    </p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container map-layout">
+    <aside class="map-sidebar">
+      <h2 style="font-size:1.1rem">Filters</h2>
+
+      <div class="field">
+        <label for="map-category">Category</label>
+        <select id="map-category">
+          <option value="">All categories</option>
+          {% for category in categories %}
+            <option value="{{ category.slug }}">{{ category.name }} ({{ category_counts.get(category.slug, 0) }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field" style="margin-top:var(--space-3)">
+        <label for="map-district">District</label>
+        <select id="map-district">
+          <option value="">All districts</option>
+          {% for district in districts %}<option value="{{ district.slug }}">{{ district.name }}</option>{% endfor %}
+        </select>
+      </div>
+
+      <div class="field field--checkbox" style="margin-top:var(--space-3)">
+        <input type="checkbox" id="map-verified">
+        <label for="map-verified">Only field-verified coordinates</label>
+      </div>
+
+      <div class="cluster" style="margin-top:var(--space-4)">
+        <button class="btn btn--primary btn--sm" type="button" data-map-apply>{{ icon("filter", 16) }} Apply</button>
+        <button class="btn btn--ghost btn--sm" type="button" data-map-reset>Reset</button>
+      </div>
+
+      <hr class="divider">
+
+      <p class="text-muted" style="font-size:.86rem;margin:0" id="map-status" role="status" aria-live="polite">Loading destinations…</p>
+      <div class="map-results" id="map-results" aria-label="Destinations in the current view"></div>
+      <div id="map-message" class="mt-4"></div>
+    </aside>
+
+    <div>
+      <div id="map" role="application" aria-label="Interactive map of Tripura destinations"></div>
+      <div class="alert alert--info mt-4">{{ icon("info", 18) }}
+        <span>
+          Tiles are loaded from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>.
+          Their public tile server is fine for a prototype and small demos, but production traffic needs a
+          dedicated tile provider and an attribution review.
+        </span>
+      </div>
+      {% if not current_user.is_authenticated %}
+        <script type="application/json" id="map-banner"></script>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script id="map-settings" type="application/json">{{ map_settings|tojson }}</script>
+<script src="{{ url_for('static', filename='js/map.js') }}" defer></script>
+{% endblock %}

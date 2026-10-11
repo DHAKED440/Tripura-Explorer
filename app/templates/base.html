@@ -1,0 +1,113 @@
+{% from "partials/icons.html" import icon %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ site_name }} — {{ site_tagline }}{% endblock %}</title>
+  <meta name="description" content="{% block description %}Discover destinations across Tripura, plan a day-wise trip and find local experiences.{% endblock %}">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="{{ url_for('main.home') }}">
+        <span class="brand__mark" aria-hidden="true">TE</span>
+        <span class="brand__text">
+          Tripura Explore
+          <small>Discover Tripura</small>
+        </span>
+      </a>
+
+      <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="primary-navigation">
+        <span></span><span></span><span></span>
+        <span class="visually-hidden">Menu</span>
+      </button>
+
+      <nav class="nav" id="primary-navigation" aria-label="Primary">
+        <ul class="nav__list">
+          <li><a class="nav__link {{ 'is-active' if request.endpoint == 'main.home' }}" href="{{ url_for('main.home') }}">Home</a></li>
+          <li><a class="nav__link {{ 'is-active' if request.endpoint == 'places.explore' }}" href="{{ url_for('places.explore') }}">Explore Places</a></li>
+          <li><a class="nav__link {{ 'is-active' if request.endpoint == 'map.map_page' }}" href="{{ url_for('map.map_page') }}">Map</a></li>
+          <li><a class="nav__link {{ 'is-active' if request.endpoint == 'itineraries.trip_planner' }}" href="{{ url_for('itineraries.trip_planner') }}">Trip Planner</a></li>
+          <li><a class="nav__link {{ 'is-active' if request.endpoint == 'experiences.index' }}" href="{{ url_for('experiences.index') }}">Local Experiences</a></li>
+          {% if current_user.is_authenticated %}
+            <li><a class="nav__link {{ 'is-active' if request.endpoint == 'itineraries.my_trips' }}" href="{{ url_for('itineraries.my_trips') }}">Saved Trips</a></li>
+          {% endif %}
+        </ul>
+        <div class="nav__actions">
+          {% if current_user.is_authenticated %}
+            {% if current_user.is_admin %}
+              <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.dashboard') }}">{{ icon("shield", 16) }} Admin</a>
+            {% endif %}
+            <a class="btn btn--secondary btn--sm" href="{{ url_for('auth.profile') }}">{{ current_user.first_name or "Profile" }}</a>
+            <form method="post" action="{{ url_for('auth.logout') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn--ghost btn--sm" type="submit">Sign out</button>
+            </form>
+          {% else %}
+            <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.login') }}">Sign in</a>
+            <a class="btn btn--primary btn--sm" href="{{ url_for('auth.register') }}">Create account</a>
+          {% endif %}
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% include "partials/_flash.html" %}
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <h4>Tripura Explore</h4>
+          <p style="margin:0 0 12px">{{ site_tagline }} A tourism discovery and trip-planning prototype for Tripura, India.</p>
+          <p class="text-muted" style="font-size:.85rem;margin:0">Prototype build — destination facts, fees and timings are being verified with the managing authorities.</p>
+        </div>
+        <div>
+          <h4>Discover</h4>
+          <ul class="footer-list">
+            <li><a href="{{ url_for('places.explore') }}">Explore places</a></li>
+            <li><a href="{{ url_for('map.map_page') }}">Interactive map</a></li>
+            <li><a href="{{ url_for('experiences.index') }}">Local experiences</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Plan</h4>
+          <ul class="footer-list">
+            <li><a href="{{ url_for('itineraries.trip_planner') }}">Trip planner</a></li>
+            <li><a href="{{ url_for('itineraries.my_trips') if current_user.is_authenticated else url_for('auth.login') }}">Saved trips</a></li>
+            <li><a href="{{ url_for('auth.profile') if current_user.is_authenticated else url_for('auth.register') }}">Your account</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>About</h4>
+          <ul class="footer-list">
+            <li><a href="{{ url_for('main.about') }}">About the prototype</a></li>
+            <li><a href="{{ url_for('main.about') }}#data">Data and verification</a></li>
+            <li><a href="{{ url_for('main.about') }}#contact">Report an issue</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; {{ current_year }} Tripura Explore — student/startup prototype.</span>
+        <span>Map data &copy; OpenStreetMap contributors.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

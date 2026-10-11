@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}{{ "Edit " ~ place.name if place else "New destination" }} — Admin — Tripura Explore{% endblock %}
+
+{% macro field(input, hint=None) %}
+  <div class="field">
+    {{ input.label }}
+    {{ input() }}
+    {% if hint %}<span class="hint">{{ hint }}</span>{% endif %}
+    {% for error in input.errors %}<span class="error">{{ error }}</span>{% endfor %}
+  </div>
+{% endmacro %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <ol class="breadcrumb"><li><a href="{{ url_for('admin.places') }}">Destinations</a></li><li>/ <span>{{ place.name if place else "New destination" }}</span></li></ol>
+    <h1>{{ "Edit destination" if place else "Add a destination" }}</h1>
+    <p>Leave a field empty when the fact has not been verified. Publishing an unverified record is allowed for drafts, but the public page will show “Data pending verification”.</p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container admin-layout">
+    {% include "admin/_nav.html" %}
+    <div>
+      <form class="card form" method="post" novalidate style="padding:var(--space-5)">
+        {{ form.csrf_token }}
+        <div class="form-row">
+          {{ field(form.name) }}
+          {{ field(form.slug, "Lowercase letters, numbers and hyphens.") }}
+        </div>
+        {{ field(form.tagline) }}
+        {{ field(form.short_description, "Shown on cards — about 25 words.") }}
+        {{ field(form.description, "The full overview shown on the details page.") }}
+
+        <div class="form-row form-row--3">
+          {{ field(form.category_id) }}
+          {{ field(form.district_id) }}
+          {{ field(form.locality) }}
+        </div>
+        {{ field(form.address) }}
+
+        <fieldset>
+          <legend>Location</legend>
+          <div class="form-row form-row--3">
+            {{ field(form.latitude) }}
+            {{ field(form.longitude) }}
+            {{ field(form.coordinate_source) }}
+          </div>
+          <div class="field field--checkbox">{{ form.coordinates_verified() }}<label for="{{ form.coordinates_verified.id }}">{{ form.coordinates_verified.label.text }}</label></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Visitor information (leave blank if unverified)</legend>
+          <div class="form-row">
+            {{ field(form.entry_fee_indian) }}
+            {{ field(form.entry_fee_foreign) }}
+          </div>
+          <div class="form-row form-row--3">
+            {{ field(form.opening_info) }}
+            {{ field(form.closed_day) }}
+            {{ field(form.best_season) }}
+          </div>
+          <div class="form-row form-row--3">
+            {{ field(form.typical_visit_hours) }}
+            {{ field(form.facilities) }}
+            {{ field(form.contact_info) }}
+          </div>
+          {{ field(form.accessibility_info) }}
+          {{ field(form.safety_notes) }}
+        </fieldset>
+
+        <fieldset>
+          <legend>Media and discovery</legend>
+          <div class="form-row">
+            {{ field(form.image_url, "Path such as /static/images/places/neermahal.svg or a full URL.") }}
+            {{ field(form.image_alt, "Describe the image for screen readers.") }}
+          </div>
+          <div class="form-row">
+            {{ field(form.extra_tags, "Comma separated, for example: Lakes,Culture") }}
+            {{ field(form.popularity, "0–100. Higher scores appear first on the homepage.") }}
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Publishing and verification</legend>
+          <div class="form-row form-row--3">
+            {{ field(form.verified_by, "Name of the person who checked the facts.") }}
+            {{ field(form.last_verified_at) }}
+          </div>
+          <div class="field field--checkbox">{{ form.is_published() }}<label for="{{ form.is_published.id }}">{{ form.is_published.label.text }}</label></div>
+          <div class="field field--checkbox">{{ form.is_verified() }}<label for="{{ form.is_verified.id }}">{{ form.is_verified.label.text }}</label></div>
+          {% for error in form.verified_by.errors %}<span class="error">{{ error }}</span>{% endfor %}
+          {{ field(form.verification_notes) }}
+          {{ field(form.source_note) }}
+        </fieldset>
+
+        <div class="cluster">
+          <button class="btn btn--primary" type="submit">{{ icon("check", 18) }} Save destination</button>
+          <a class="btn btn--ghost" href="{{ url_for('admin.places') }}">Cancel</a>
+          {% if place %}<a class="btn btn--secondary" href="{{ url_for('places.detail', slug=place.slug) }}" target="_blank" rel="noopener">Preview public page</a>{% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

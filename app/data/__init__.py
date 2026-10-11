@@ -1,0 +1,1 @@
+"""Editorial reference data that is not stored in the database."""

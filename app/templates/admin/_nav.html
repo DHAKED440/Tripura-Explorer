@@ -1,0 +1,10 @@
+{% from "partials/icons.html" import icon %}
+<nav class="admin-nav" aria-label="Admin sections">
+  <a class="{{ 'is-active' if request.endpoint == 'admin.dashboard' }}" href="{{ url_for('admin.dashboard') }}">{{ icon("layers", 16) }} Overview</a>
+  <a class="{{ 'is-active' if request.endpoint in ['admin.places', 'admin.place_new', 'admin.place_edit'] }}" href="{{ url_for('admin.places') }}">{{ icon("map", 16) }} Destinations</a>
+  <a class="{{ 'is-active' if request.endpoint == 'admin.categories' }}" href="{{ url_for('admin.categories') }}">{{ icon("list", 16) }} Categories</a>
+  <a class="{{ 'is-active' if request.endpoint in ['admin.providers', 'admin.provider_new', 'admin.provider_edit'] }}" href="{{ url_for('admin.providers') }}">{{ icon("users", 16) }} Providers</a>
+  <a class="{{ 'is-active' if request.endpoint == 'admin.inquiries' }}" href="{{ url_for('admin.inquiries') }}">{{ icon("mail", 16) }} Inquiries</a>
+  <a class="{{ 'is-active' if request.endpoint == 'admin.corrections' }}" href="{{ url_for('admin.corrections') }}">{{ icon("alert", 16) }} Corrections</a>
+  <a class="{{ 'is-active' if request.endpoint == 'admin.users' }}" href="{{ url_for('admin.users') }}">{{ icon("shield", 16) }} Users</a>
+</nav>

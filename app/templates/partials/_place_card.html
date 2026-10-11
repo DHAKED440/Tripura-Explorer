@@ -1,0 +1,39 @@
+{% macro place_card(place, favorite_ids=None, is_favorite=False, horizontal=False) %}
+<article class="card {{ 'card--horizontal' if horizontal else '' }}">
+  <div class="card__media">
+    {% if place.image_url %}
+      <img src="{{ place.image_url }}" alt="{{ place.image_alt or place.name }}" loading="lazy">
+    {% else %}
+      <img src="{{ url_for('static', filename='images/place-placeholder.svg') }}" alt="Placeholder image for {{ place.name }}" loading="lazy">
+    {% endif %}
+    <span class="badge badge--outline card__flag" style="background:rgba(255,255,255,.92)">{{ place.category_name or "Uncategorised" }}</span>
+    {% if current_user.is_authenticated %}
+      <button class="icon-button card__fav favorite-button {{ 'is-active' if is_favorite }}"
+              type="button"
+              data-favorite-toggle
+              data-place-id="{{ place.id }}"
+              data-place-name="{{ place.name }}"
+              aria-pressed="{{ 'true' if is_favorite else 'false' }}"
+              aria-label="{{ 'Remove ' ~ place.name ~ ' from favourites' if is_favorite else 'Save ' ~ place.name ~ ' to favourites' }}">
+        {{ icon("heart", 18) }}
+      </button>
+    {% endif %}
+  </div>
+  <div class="card__body">
+    <div class="card__meta">
+      {{ icon("pin", 15) }}
+      <span>{{ place.locality or place.district_name or "Tripura" }}{% if place.locality and place.district_name %} · {{ place.district_name }}{% endif %}</span>
+    </div>
+    <h3 class="card__title"><a href="{{ url_for('places.detail', slug=place.slug) }}">{{ place.name }}</a></h3>
+    <p class="card__desc">{{ place.short_description or place.tagline or "Details are being compiled for this destination." }}</p>
+    <div class="card__footer">
+      <span class="badge {{ 'badge--verified' if place.is_verified else 'badge--muted' }}">
+        {{ "Verified" if place.is_verified else "Data pending" }}
+      </span>
+      <a class="btn btn--ghost btn--sm" href="{{ url_for('places.detail', slug=place.slug) }}">
+        View details {{ icon("arrow-right", 16) }}
+      </a>
+    </div>
+  </div>
+</article>
+{% endmacro %}

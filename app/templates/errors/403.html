@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Access denied — Tripura Explore{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="empty-state" style="max-width:640px;margin:0 auto">
+      <p class="eyebrow">403</p>
+      <h1>You do not have access to this page</h1>
+      <p>Either the page is for administrators only, or the record belongs to another account. Private trips are never
+        shown to other users.</p>
+      <div class="cluster" style="justify-content:center">
+        <a class="btn btn--primary" href="{{ url_for('main.home') }}">Back to the homepage</a>
+        {% if not current_user.is_authenticated %}<a class="btn btn--secondary" href="{{ url_for('auth.login') }}">Sign in</a>{% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

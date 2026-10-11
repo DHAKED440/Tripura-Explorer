@@ -1,0 +1,86 @@
+{#- Inline line icons. Keeping them in one macro avoids an icon font or CDN. -#}
+{% macro icon(name, size=20, cls="") -%}
+<svg class="icon {{ cls }}" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none"
+     stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"
+     aria-hidden="true" focusable="false">
+{%- if name == "search" -%}
+<circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>
+{%- elif name == "pin" -%}
+<path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/>
+{%- elif name == "calendar" -%}
+<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/>
+{%- elif name == "heart" -%}
+<path d="M12 20s-7-4.4-7-9.3A4 4 0 0 1 12 8a4 4 0 0 1 7 2.7C19 15.6 12 20 12 20Z"/>
+{%- elif name == "compass" -%}
+<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.2 5-5 2.2 2.2-5 5-2.2Z"/>
+{%- elif name == "menu" -%}
+<path d="M4 7h16M4 12h16M4 17h16"/>
+{%- elif name == "close" -%}
+<path d="M6 6l12 12M18 6 6 18"/>
+{%- elif name == "check" -%}
+<path d="m5 13 4 4L19 7"/>
+{%- elif name == "alert" -%}
+<path d="M12 4 2.5 20h19L12 4Z"/><path d="M12 10v4M12 17h.01"/>
+{%- elif name == "info" -%}
+<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>
+{%- elif name == "arrow-right" -%}
+<path d="M5 12h14M13 6l6 6-6 6"/>
+{%- elif name == "share" -%}
+<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5 8.6 10.5"/>
+{%- elif name == "trash" -%}
+<path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/>
+{%- elif name == "plus" -%}
+<path d="M12 5v14M5 12h14"/>
+{%- elif name == "minus" -%}
+<path d="M5 12h14"/>
+{%- elif name == "drag" -%}
+<path d="M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01"/>
+{%- elif name == "filter" -%}
+<path d="M4 6h16M7 12h10M10 18h4"/>
+{%- elif name == "external" -%}
+<path d="M14 4h6v6M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>
+{%- elif name == "shield" -%}
+<path d="M12 3l7 3v6c0 4.2-2.9 7.7-7 9-4.1-1.3-7-4.8-7-9V6l7-3Z"/><path d="m9 12 2 2 4-4"/>
+{%- elif name == "layers" -%}
+<path d="m12 3 8 4.5-8 4.5-8-4.5L12 3Z"/><path d="m4 12 8 4.5 8-4.5M4 16.5 12 21l8-4.5"/>
+{%- elif name == "clock" -%}
+<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+{%- elif name == "ticket" -%}
+<path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8Z"/><path d="M12 6v12"/>
+{%- elif name == "users" -%}
+<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 11a3 3 0 1 0 0-6M18 20a6 6 0 0 0-3-5.2"/>
+{%- elif name == "mail" -%}
+<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/>
+{%- elif name == "phone" -%}
+<path d="M5 4h3.5l1.5 4-2 1.4a12 12 0 0 0 5.6 5.6L15 13l4 1.5V18a2 2 0 0 1-2.2 2A15 15 0 0 1 4 6.2 2 2 0 0 1 5 4Z"/>
+{%- elif name == "edit" -%}
+<path d="M4 20h4L20 8l-4-4L4 16v4Z"/><path d="m15 5 4 4"/>
+{%- elif name == "list" -%}
+<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>
+{%- elif name == "map" -%}
+<path d="m9 4 6 2 6-2v14l-6 2-6-2-6 2V6l6-2Z"/><path d="M9 4v14M15 6v14"/>
+{%- elif name == "mountain" -%}
+<path d="m3 19 6.5-11 4 6.5 2.5-4L21 19H3Z"/>
+{%- elif name == "waves" -%}
+<path d="M3 8c2 0 2.5 1.6 4.5 1.6S10 8 12 8s2.5 1.6 4.5 1.6S19 8 21 8M3 14c2 0 2.5 1.6 4.5 1.6S10 14 12 14s2.5 1.6 4.5 1.6S19 14 21 14"/>
+{%- elif name == "leaf" -%}
+<path d="M20 4c-8 0-13 3.5-13 9a6 6 0 0 0 6 6c5.5 0 7-5 7-15Z"/><path d="M7 20c1.5-5 4.5-8.5 9-11"/>
+{%- elif name == "landmark" -%}
+<path d="m12 3 9 5H3l9-5Z"/><path d="M5 10v8M10 10v8M14 10v8M19 10v8M3 21h18"/>
+{%- elif name == "paw" -%}
+<circle cx="7" cy="9" r="2"/><circle cx="12" cy="7" r="2"/><circle cx="17" cy="9" r="2"/><path d="M8 15c0-2 1.8-3.5 4-3.5s4 1.5 4 3.5-1.8 3.5-4 3.5-4-1.5-4-3.5Z"/>
+{%- elif name == "mask" -%}
+<path d="M4 6h16c0 7-3.4 12-8 12S4 13 4 6Z"/><path d="M9 11h.01M15 11h.01M10 15h4"/>
+{%- elif name == "star" -%}
+<path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8L12 4Z"/>
+{%- elif name == "eye" -%}
+<path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.6"/>
+{%- elif name == "settings" -%}
+<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 11.5 4a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 22 11a2 2 0 1 1 0 4Z"/>
+{%- endif -%}
+</svg>
+{%- endmacro %}
+
+{% macro category_icon(slug, size=20) -%}
+{{ icon(slug if slug in ["leaf","landmark","waves","mountain","paw","mask"] else "compass", size) }}
+{%- endmacro %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}{{ "Edit provider" if provider else "New provider" }} — Admin — Tripura Explore{% endblock %}
+
+{% macro field(input, hint=None) %}
+  <div class="field">
+    {{ input.label }}
+    {{ input() }}
+    {% if hint %}<span class="hint">{{ hint }}</span>{% endif %}
+    {% for error in input.errors %}<span class="error">{{ error }}</span>{% endfor %}
+  </div>
+{% endmacro %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <ol class="breadcrumb"><li><a href="{{ url_for('admin.providers') }}">Providers</a></li><li>/ <span>{{ provider.name if provider else "New provider" }}</span></li></ol>
+    <h1>{{ "Edit provider" if provider else "Add a local provider" }}</h1>
+    <p>Collect only the contact details a provider has agreed to publish. Never add availability, ratings or prices the provider has not confirmed.</p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container admin-layout">
+    {% include "admin/_nav.html" %}
+    <form class="card form" method="post" novalidate style="padding:var(--space-5)">
+      {{ form.csrf_token }}
+      <div class="form-row">
+        {{ field(form.name) }}
+        {{ field(form.slug) }}
+      </div>
+      <div class="form-row form-row--3">
+        {{ field(form.category) }}
+        {{ field(form.district_id) }}
+        {{ field(form.locality) }}
+      </div>
+      {{ field(form.short_description) }}
+      {{ field(form.description) }}
+      {{ field(form.address) }}
+      <div class="form-row form-row--3">
+        {{ field(form.contact_name) }}
+        {{ field(form.contact_phone) }}
+        {{ field(form.contact_email) }}
+      </div>
+      <div class="form-row form-row--3">
+        {{ field(form.languages) }}
+        {{ field(form.price_note, "Only publish a price the provider confirmed.") }}
+        {{ field(form.approval_status) }}
+      </div>
+      <div class="form-row">
+        {{ field(form.image_url) }}
+        {{ field(form.image_alt) }}
+      </div>
+      {{ field(form.status_note, "Internal note explaining why the listing is in this state.") }}
+      <div class="cluster">
+        <button class="btn btn--primary" type="submit">{{ icon("check", 18) }} Save provider</button>
+        <a class="btn btn--ghost" href="{{ url_for('admin.providers') }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

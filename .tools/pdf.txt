@@ -1,0 +1,708 @@
+
+===== PAGE 1 =====
+TOURISM STARTUP PROTOTYPE  ·  PROJECT BLUEPRINT
+Tripura Explore
+Complete Development Workflow
+& Documentation Plan
+HTML  ·  CSS  ·  JavaScript  ·  Python Flask  ·  SQLite / MySQL
+9
+Page workflows
+8
+Project reports
+12
+Test cases
+4
+Week plan
+Workflow  →  Database  →  Reports  →  Testing  →  Plan  →  Deliverables
+
+===== PAGE 2 =====
+Tripura Explore — Development Workflow & Documentation Plan
+Page 2
+Contents
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 3
+1. Overall System Workflow
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 3
+2. Workflow for Every Page
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 4
+Page and Route Quick Reference
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 4
+Page 1 — Homepage
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 4
+Page 2 — Explore Destinations
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 5
+Page 3 — Destination Details
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 5
+Page 4 — Interactive Map
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 6
+Page 5 — Trip Planner
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 7
+Page 6 — Itinerary Details / Saved Trips
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 7
+Page 7 — Local Experiences
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 8
+Page 8 — User Profile
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 8
+Page 9 — Admin Dashboard
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 9
+3. Database Workflow and Relationships
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 10
+Relationship summary
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 10
+4. Reports and Documents You Should Prepare
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 11
+What should your reports prove?
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 11
+5. Example Testing Report
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 12
+6. Four-Week Development Plan
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 12
+7. Final Project Deliverables
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 13
+8. What to Build First
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 13
+Keeping design, workflow, and reports aligned
+About this document. For your tourism startup prototype, you need two things: a clear workflow for every website
+page, and a set of project reports that explain what you are building, how it works, and how you will test it. This
+blueprint is a practical guide to follow while developing the website with HTML, CSS, JavaScript, Python Flask, and
+SQLite/MySQL.
+
+===== PAGE 3 =====
+Tripura Explore — Development Workflow & Documentation Plan
+Page 3
+1. Overall System Workflow
+This is the complete journey through the website, from a visitor opening it to planning a trip.
+Open Tripura Explore
+Homepage
+Explore
+Destinations
+Interactive
+Map
+Trip Planner
+Local
+Experiences
+Destination
+Details
+Favorite or
+Add to Trip
+Generate
+Itinerary
+View Local
+Business
+Send Inquiry
+Review
+and Edit
+Save
+or Share
+View Saved
+Trips
+ Figure 1 — Complete visitor journey across the Tripura Explore website
+Note. The homepage is the central entry point. Search results, destination cards, and map markers should all lead to
+the same destination details page, so you maintain one reliable source of information per place.
+2. Workflow for Every Page
+Each page below follows the same structure: purpose, user actions, system workflow, backend routes, and a
+success condition you can test against.
+
+===== PAGE 4 =====
+Tripura Explore — Development Workflow & Documentation Plan
+Page 4
+Page and Route Quick Reference
+#
+Page
+Route
+Backend endpoints
+1
+Homepage
+/
+GET /, GET /api/featured-places
+2
+Explore Destinations
+/explore
+GET /explore, GET /api/places (optional)
+3
+Destination Details
+/places/<slug>
+GET /places/<slug>, POST /favorites, POST
+/itineraries/stops
+4
+Interactive Map
+/map
+GET /api/places/map
+5
+Trip Planner
+/trip-planner
+GET /trip-planner, POST /api/itineraries, PATCH
+/api/itineraries/<id>
+6
+Saved Trips
+/my-trips
+GET /my-trips, GET /api/itineraries/<id>, PATCH
+/api/itineraries/<id>
+7
+Local Experiences
+/experiences
+GET /experiences, GET /experiences/<slug>, POST
+/api/inquiries
+8
+User Profile (optional)
+/profile
+GET /profile, POST /auth/register, POST /auth/login,
+POST /auth/logout
+9
+Admin Dashboard
+/admin
+GET /admin, POST /admin/places, POST
+/admin/places/<id>/publish
+Page 1 — Homepage
+/
+Purpose: Help visitors decide where to go.
+User actions
+ Enter a destination or keyword.
+ Select a category.
+ Click a popular destination.
+ Open the map or trip planner.
+System workflow
+ Load featured and popular destinations from the database.
+ Display category shortcuts and a search field.
+ When a user searches, open Explore with the search term.
+ When a destination is clicked, open its detail page.
+ When “Plan Your Trip” is clicked, open the planner.
+Backend
+GET / · GET /api/featured-places
+Success condition
+A visitor can reach a relevant destination or begin planning a trip without confusion.
+Page 2 — Explore Destinations
+/explore
+Purpose: Let visitors discover and compare places.
+User actions
+ Search by destination name.
+ Filter by category and district.
+ Clear filters.
+ Open a destination card.
+System workflow
+1. Receive search and filter parameters.
+2. Validate the parameters.
+
+===== PAGE 5 =====
+Tripura Explore — Development Workflow & Documentation Plan
+Page 5
+3. Query matching places in the database.
+4. Return results with pagination if needed.
+5. Display a useful empty state if nothing matches.
+Example: /explore?category=Nature&district=Gomati
+Backend
+GET /explore · optionally GET /api/places
+Success condition
+Search and filters return relevant results, and each card opens the correct destination.
+Page 3 — Destination Details
+/places/<slug>
+Purpose: Give visitors enough information to decide whether to visit a place.
+User actions
+ View photos and description.
+ Check location, opening information, and entry fees where verified.
+ View the place on a map.
+ Add the place to a trip.
+ Save it as a favorite.
+ Open directions.
+System workflow
+1. Receive the destination slug.
+2. Retrieve the place and its associated category.
+3. Return a 404 page if the place does not exist or is not published.
+4. Display verified information and available photos.
+5. Handle Add to Trip, Favorite, and Directions actions.
+Backend
+GET /places/<slug> · POST /favorites · POST /itineraries/stops
+Success condition
+Users can make an informed decision and take the next action without re-entering the destination
+name.
+Page 4 — Interactive Map
+/map
+Purpose: Help tourists understand where attractions are located.
+User actions
+ Pan and zoom.
+ Filter map markers by category.
+ Click a marker to view a destination preview.
+ Open destination details.
+ Open external navigation directions.
+System workflow
+1. Load published attractions with valid latitude and longitude.
+2. Render markers using Leaflet and OpenStreetMap.
+3. Update markers when filters change.
+4. Open a preview when a marker is selected.
+5. Link to the correct destination details page.
+Backend
+GET /api/places/map
+Success condition
+Each marker points to the correct place, and missing coordinates do not break the map.
+
+===== PAGE 6 =====
+Tripura Explore — Development Workflow & Documentation Plan
+Page 6
+Page 5 — Trip Planner
+/trip-planner
+Purpose: Convert a tourist’s preferences into a practical itinerary.
+User inputs
+ Number of days.
+ Starting location.
+ Interests such as nature, heritage, lakes, or culture.
+ Optional budget.
+ Optional travel dates.
+System workflow
+No
+Yes
+Open Trip Planner
+Enter Preferences
+Validate Inputs
+Inputs valid?
+Show Validation
+Errors
+Find Matching Places
+Group Places by Area
+Create Day-wise Itinerary
+Display Suggested Plan
+Edit Stops
+Save or Share Plan
+ Figure 2 — Trip Planner workflow with input validation
+Note. For the first version, use rule-based logic rather than AI. Match attractions to interests, group nearby
+destinations, and use travel-time estimates when available. If route information is unavailable, label the itinerary as a
+suggestion rather than an optimized route.
+Backend
+GET /trip-planner · POST /api/itineraries · PATCH /api/itineraries/<id>
+Success condition
+Valid inputs generate a readable itinerary, and users can change the suggested stops.
+
+===== PAGE 7 =====
+Tripura Explore — Development Workflow & Documentation Plan
+Page 7
+Page 6 — Itinerary Details / Saved Trips
+/my-trips
+Purpose: Let visitors return to their plans.
+Workflow
+1. Display saved trips.
+2. Open a trip to view each day’s stops.
+3. Allow users to reorder or remove stops.
+4. Recalculate any available estimates.
+5. Save changes.
+6. Share a read-only link if sharing is enabled.
+Important. If you implement accounts, users must only access or modify their own trips. For an early demo, you can
+start with browser-local saved trips and introduce accounts later.
+Backend
+GET /my-trips · GET /api/itineraries/<id> · PATCH /api/itineraries/<id>
+Page 7 — Local Experiences
+/experiences
+Purpose: Connect visitors with local tourism providers.
+Include
+ Homestays and accommodation.
+ Local guides.
+ Restaurants and local food experiences.
+ Transport providers.
+ Handicrafts and cultural experiences.
+Workflow
+1. Display approved business listings.
+2. Filter by type and district.
+3. Open a provider’s detail page.
+4. Show verified contact information and indicative prices if supplied.
+5. Let a visitor submit an inquiry.
+6. Store the inquiry for the provider or admin to review.
+Important. Start with manually approved listings. Do not advertise real-time availability or confirmed bookings until
+you have systems that support them.
+Backend
+GET /experiences · GET /experiences/<slug> · POST /api/inquiries
+
+===== PAGE 8 =====
+Tripura Explore — Development Workflow & Documentation Plan
+Page 8
+Page 8 — User Profile
+/profile (optional for the first demonstration)
+Workflow
+1. Register or log in.
+2. View profile information.
+3. Open saved trips and favorite places.
+4. Update profile details.
+5. Log out.
+Note. Use secure password hashing, session protection, and authorization checks. You can postpone this page until
+saved trips need to work across devices.
+Backend
+GET /profile · POST /auth/register · POST /auth/login · POST /auth/logout
+Page 9 — Admin Dashboard
+/admin
+Purpose: Keep the tourism information accurate and trustworthy.
+Workflow
+Admin Login
+Dashboard
+Manage Places
+Manage
+Categories
+Review
+Listings
+Review
+Inquiries
+Add or Edit
+Destination
+Validate
+Required Fields
+Preview
+and Publish
+Approve
+or Reject
+ Figure 3 — Admin dashboard workflow
+The admin should be able to add, edit, unpublish, and verify destinations, update coordinates and photos, review
+reported inaccuracies, and manage local listings.
+Important. Never rely on a hidden admin button as security; protect every admin endpoint on the server.
+Backend
+Admin-only routes such as GET /admin · POST /admin/places · POST
+/admin/places/<id>/publish
+
+===== PAGE 9 =====
+Tripura Explore — Development Workflow & Documentation Plan
+Page 9
+3. Database Workflow and Relationships
+Build the database before implementing complex interactions.
+CATEGORIES
+id
+PK
+name
+PLACES
+id
+PK
+category_id
+FK
+name
+slug
+district
+latitude
+longitude
+verified
+ITINERARY_STOPS
+id
+PK
+itinerary_id
+FK
+place_id
+FK
+day_number
+stop_order
+FAVORITES
+user_id
+FK
+place_id
+FK
+REVIEWS
+id
+PK
+user_id
+FK
+place_id
+FK
+rating
+USERS
+id
+PK
+email
+password_hash
+ITINERARIES
+id
+PK
+user_id
+FK
+title
+duration_days
+BUSINESSES
+id
+PK
+name
+category
+approved
+INQUIRIES
+id
+PK
+business_id
+FK
+message
+status
+classifies
+included_in
+contains
+owns
+saves
+receives
+writes
+receives
+receives
+ Figure 4 — Entity-relationship diagram (PK = primary key, FK = foreign key)
+Build order. You do not need every table on day one. Implement categories, places, itineraries, and
+itinerary_stops first. Add users, favorites, reviews, businesses, and inquiries as those features become functional.
+Until user accounts exist, itineraries.user_id can stay empty and saved trips can be kept in the browser.
+
+===== PAGE 10 =====
+Tripura Explore — Development Workflow & Documentation Plan
+Page 10
+Relationship summary
+Table A
+Relationship
+Table B
+categories
+classifies
+places
+places
+is included in
+itinerary_stops
+itineraries
+contains
+itinerary_stops
+users
+owns
+itineraries
+users
+saves
+favorites
+places
+receives
+favorites
+users
+writes
+reviews
+places
+receives
+reviews
+businesses
+receives
+inquiries
+4. Reports and Documents You Should Prepare
+For a real-world startup prototype, it is recommended to maintain eight project documents. These are useful for
+development, testing, presenting the idea to partners, and explaining the project to evaluators.
+ Report
+ 1
+Project Proposal / PRD
+What and why you are building
+Include the problem statement, target users, proposed solution, MVP scope, business objectives,
+assumptions, and success metrics.
+ Report
+ 2
+UI/UX Design Specification
+How the website looks and behaves
+Include wireframes, page layouts, navigation, user flows, mobile layouts, color palette, typography,
+reusable components, and error/empty/loading states.
+ Report
+ 3
+System Design / SRS
+What the system must do
+Document functional requirements, non-functional requirements, architecture, page workflows, use cases,
+and system constraints.
+ Report
+ 4
+Database Design
+Include an ER diagram, table schemas, primary and foreign keys, validation rules, indexes, sample
+records, and data sources.
+ Report
+ 5
+Technical / API Documentation
+Document your folder structure, Flask routes, request parameters, response formats, error codes,
+configuration, and setup instructions.
+ Report
+ 6
+Testing Report
+Include test cases, expected and actual results, pass/fail status, bugs, fixes, browser/device checks, and
+user feedback.
+ Report
+ 7
+Analytics and Evaluation Report
+Track searches, popular destinations, itinerary creation, filter usage, completion rate, and feedback. Use
+real data collected with appropriate privacy safeguards.
+
+===== PAGE 11 =====
+Tripura Explore — Development Workflow & Documentation Plan
+Page 11
+ Report
+ 8
+Startup Validation and Business Report
+Include competitor research, tourist interviews, local provider interviews, revenue hypotheses, operating
+costs, risks, and results from prototype trials.
+What should your reports prove?
+Report
+Evidence of completion
+Project proposal
+Clear problem and defined MVP
+UI/UX specification
+Every main page and user flow designed
+System design
+Architecture and requirements documented
+Database design
+Schema created and sample data loaded
+API documentation
+Routes tested and documented
+Testing report
+Actual results and unresolved bugs recorded
+Analytics report
+Real usage measurements or clearly labeled demo data
+Startup report
+Interviews, findings, and business assumptions documented
+Important. Don’t invent results to make the reports look complete. If you have not yet interviewed tourists or tested
+the website, mark those sections as planned or pending.
+5. Example Testing Report
+Create a spreadsheet named test_cases.xlsx or maintain a Markdown file in your GitHub repository. The first four
+columns are the test plan; the remaining columns are filled in as each test is executed.
+Important. Mark a test as passed only after executing it. Leave actual results, bug IDs, dates, and tester names
+blank until the test has really been run.
+Test
+ID
+Feature
+Test action
+Expected result
+Actual
+result
+Status
+Bug ID
+Date
+tested
+Tester
+TC-01
+Homepage
+Open the website
+Homepage loads
+successfully
+Pending
+TC-02
+Search
+Search for Neermahal
+Matching destination
+appears
+Pending
+TC-03
+Filters
+Select Nature category
+Only matching places
+appear
+Pending
+TC-04
+Destination
+details
+Open a valid place
+Correct details are
+displayed
+Pending
+TC-05
+Invalid
+destination
+Open a nonexistent slug
+A proper 404 page
+appears
+Pending
+TC-06
+Map
+Click a destination marker
+Correct destination
+preview opens
+Pending
+TC-07
+Trip planner
+Submit valid preferences
+An itinerary is generated
+Pending
+TC-08
+Trip planner
+Submit invalid duration
+Validation error is
+displayed
+Pending
+TC-09
+Saved trips
+Save and reopen an
+itinerary
+Saved data is preserved
+Pending
+TC-10
+Admin
+Access admin page
+without authorization
+Access is denied
+Pending
+TC-11
+Mobile
+Open website on a narrow
+screen
+Layout remains usable
+Pending
+TC-12
+Directions
+Click Get Directions
+Correct external
+directions open
+Pending
+
+===== PAGE 12 =====
+Tripura Explore — Development Workflow & Documentation Plan
+Page 12
+6. Four-Week Development Plan
+WEEK 1
+Planning and UI
+ Finalize requirements and user flows.
+ Complete the homepage and explore page.
+ Design destination details, map, and planner pages.
+ Set up GitHub and the Flask project.
+WEEK 2
+Backend and database
+ Create tables and load verified destination data.
+ Implement search, filters, and destination details.
+ Connect the interactive map.
+ Test Flask routes.
+WEEK 3
+Trip planning
+ Generate rule-based itineraries.
+ Add, remove, and reorder trip stops.
+ Implement saving and favorites.
+ Build basic admin functionality.
+WEEK 4
+Testing and validation
+ Run the test cases.
+ Fix bugs and improve mobile responsiveness.
+ Test with potential tourists.
+ Complete the reports and prepare the demo.
+7. Final Project Deliverables
+At the end, your repository should look something like this:
+tripura-explore/
+├── app.py
+├── models.py
+├── requirements.txt
+├── README.md
+├── templates/
+├── static/
+├── instance/
+│   └── tripura.db
+├── tests/
+│   └── test_places.py
+└── docs/
+    ├── 01-project-proposal.md
+    ├── 02-ui-ux-specification.md
+    ├── 03-system-requirements.md
+    ├── 04-database-design.md
+    ├── 05-api-documentation.md
+    ├── 06-testing-report.xlsx
+    ├── 07-analytics-evaluation.md
+    └── 08-startup-validation.md
+
+===== PAGE 13 =====
+Tripura Explore — Development Workflow & Documentation Plan
+Page 13
+8. What to Build First
+Focus on the following functional journey before adding user profiles, reviews, or local business bookings:
+Homepage
+Explore
+Destination
+Details
+Map
+Trip Planner
+Save
+Itinerary
+ Figure 5 — Core MVP journey
+Once this journey works, you can demonstrate the prototype to tourists and local tourism providers, collect feedback,
+and decide which startup features deserve investment.
+Keeping design, workflow, and reports aligned
+ UI/UX design
+The visual blueprint.
+ Workflow
+Defines how the pages behave.
+ Reports
+Document requirements,
+implementation, testing, and
+ real-world validation.
+Keeping all three aligned will make your prototype much easier to develop and improve.

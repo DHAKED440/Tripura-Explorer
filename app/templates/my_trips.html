@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}Saved trips — Tripura Explore{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <div class="between">
+      <div>
+        <p class="eyebrow">Saved trips</p>
+        <h1>Your itineraries</h1>
+        <p>Every trip stored here belongs to your account. Nobody else can open, edit or delete it.</p>
+      </div>
+      <a class="btn btn--primary" href="{{ url_for('itineraries.trip_planner') }}">{{ icon("plus", 18) }} New trip plan</a>
+    </div>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container">
+    {% if trips %}
+      <div class="grid grid--2">
+        {% for trip in trips %}
+          <article class="card" style="padding:var(--space-5)">
+            <div class="between" style="align-items:flex-start">
+              <div>
+                <h2 style="font-size:1.2rem;margin-bottom:6px"><a href="{{ url_for('itineraries.itinerary_detail', itinerary_id=trip.id) }}">{{ trip.title }}</a></h2>
+                <p class="text-muted" style="font-size:.9rem;margin:0">
+                  {{ icon("calendar", 15) }} {{ trip.duration_days }} day{{ "" if trip.duration_days == 1 else "s" }}
+                  · from {{ trip.starting_location }}
+                  {% if trip.budget %} · budget ₹{{ trip.budget }}{% endif %}
+                </p>
+              </div>
+              {% if trip.is_shared %}<span class="badge badge--verified">Shared</span>{% endif %}
+            </div>
+
+            <div class="tag-row" style="margin-top:var(--space-3)">
+              {% for interest in trip.interests_list %}<span class="chip" style="cursor:default">{{ interest }}</span>{% endfor %}
+            </div>
+
+            <p class="text-muted" style="font-size:.88rem;margin-top:var(--space-3)">
+              {{ trip.stops|length }} stop{{ "" if trip.stops|length == 1 else "s" }} ·
+              updated {{ trip.updated_at.strftime("%d %b %Y") if trip.updated_at else "—" }}
+            </p>
+
+            <div class="cluster">
+              <a class="btn btn--secondary btn--sm" href="{{ url_for('itineraries.itinerary_detail', itinerary_id=trip.id) }}">Open trip</a>
+              <form method="post" action="{{ url_for('itineraries.delete_itinerary_form', itinerary_id=trip.id) }}"
+                    data-confirm="Delete “{{ trip.title }}”? This cannot be undone.">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn--danger btn--sm" type="submit">{{ icon("trash", 16) }} Delete</button>
+              </form>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <h3>No saved trips yet</h3>
+        <p>Generate a plan in the trip planner, then press “Save this itinerary” to keep it here. Saved trips are
+          private to your account.</p>
+        <a class="btn btn--primary" href="{{ url_for('itineraries.trip_planner') }}">Open the trip planner</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

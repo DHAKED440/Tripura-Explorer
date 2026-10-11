@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}Admin dashboard — Tripura Explore{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <p class="eyebrow">Admin</p>
+    <h1>Dashboard</h1>
+    <p>Maintain destination records, approve local providers and review what visitors report. Everything here is
+      protected by a server-side administrator check.</p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container admin-layout">
+    {% include "admin/_nav.html" %}
+    <div>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat__value">{{ stats.places_published }}</div><div class="stat__label">Published</div></div>
+        <div class="stat"><div class="stat__value">{{ stats.places_unpublished }}</div><div class="stat__label">Drafts</div></div>
+        <div class="stat"><div class="stat__value">{{ stats.places_unverified }}</div><div class="stat__label">Unverified records</div></div>
+        <div class="stat"><div class="stat__value">{{ stats.coordinates_unverified }}</div><div class="stat__label">Approximate coordinates</div></div>
+        <div class="stat"><div class="stat__value">{{ stats.businesses_pending }}</div><div class="stat__label">Providers pending</div></div>
+        <div class="stat"><div class="stat__value">{{ stats.inquiries_new }}</div><div class="stat__label">New inquiries</div></div>
+        <div class="stat"><div class="stat__value">{{ stats.corrections_new }}</div><div class="stat__label">New corrections</div></div>
+        <div class="stat"><div class="stat__value">{{ stats.users }}</div><div class="stat__label">Accounts</div></div>
+      </div>
+
+      <div class="cluster mt-4">
+        <a class="btn btn--primary" href="{{ url_for('admin.place_new') }}">{{ icon("plus", 18) }} Add destination</a>
+        <a class="btn btn--secondary" href="{{ url_for('admin.provider_new') }}">{{ icon("plus", 18) }} Add provider</a>
+        <a class="btn btn--ghost" href="{{ url_for('admin.inquiries') }}">Review inquiries</a>
+      </div>
+
+      <h2 class="mt-6">Recently updated destinations</h2>
+      <div class="table-wrap">
+        <table class="data">
+          <caption class="visually-hidden">Recently updated destination records</caption>
+          <thead><tr><th scope="col">Destination</th><th scope="col">Category</th><th scope="col">District</th><th scope="col">Status</th><th scope="col">Updated</th><th scope="col">Actions</th></tr></thead>
+          <tbody>
+            {% for place in recent_places %}
+              <tr>
+                <td><a href="{{ url_for('places.detail', slug=place.slug) }}">{{ place.name }}</a></td>
+                <td>{{ place.category_name }}</td>
+                <td>{{ place.district_name or "—" }}</td>
+                <td>
+                  <span class="badge {{ 'badge--verified' if place.is_published else 'badge--muted' }}">{{ "Published" if place.is_published else "Draft" }}</span>
+                  {% if not place.is_verified %}<span class="badge badge--pending">Unverified</span>{% endif %}
+                </td>
+                <td>{{ place.updated_at.strftime("%d %b %Y") if place.updated_at else "—" }}</td>
+                <td class="actions"><a class="btn btn--ghost btn--sm" href="{{ url_for('admin.place_edit', place_id=place.id) }}">Edit</a></td>
+              </tr>
+            {% else %}
+              <tr><td colspan="6">No destination records yet. Run <code>flask seed-data</code> to load the prototype dataset.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid grid--2 mt-6">
+        <div>
+          <h2>Latest inquiries</h2>
+          {% if recent_inquiries %}
+            <ul class="footer-list">
+              {% for inquiry in recent_inquiries %}
+                <li><strong>{{ inquiry.name }}</strong> → {{ inquiry.business.name if inquiry.business else "—" }}
+                  <span class="badge badge--muted">{{ inquiry.status }}</span></li>
+              {% endfor %}
+            </ul>
+            <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.inquiries') }}">Open inquiry list</a>
+          {% else %}
+            <p class="text-muted">No inquiries yet.</p>
+          {% endif %}
+        </div>
+        <div>
+          <h2>New correction reports</h2>
+          {% if new_corrections %}
+            <ul class="footer-list">
+              {% for report in new_corrections %}
+                <li>{{ report.place.name if report.place else "—" }} — {{ report.message|truncate(70) }}</li>
+              {% endfor %}
+            </ul>
+            <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.corrections') }}">Open corrections</a>
+          {% else %}
+            <p class="text-muted">No new reports.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

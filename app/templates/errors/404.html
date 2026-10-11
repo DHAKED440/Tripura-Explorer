@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Page not found — Tripura Explore{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="empty-state" style="max-width:640px;margin:0 auto">
+      <p class="eyebrow">404</p>
+      <h1>We could not find that page</h1>
+      <p>The link may be out of date, or the destination is not published yet. Unpublished records are never shown
+        to public visitors.</p>
+      <div class="cluster" style="justify-content:center">
+        <a class="btn btn--primary" href="{{ url_for('main.home') }}">Back to the homepage</a>
+        <a class="btn btn--secondary" href="{{ url_for('places.explore') }}">Explore destinations</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

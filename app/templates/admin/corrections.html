@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}Corrections — Admin — Tripura Explore{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container"><p class="eyebrow">Admin</p><h1>Reported corrections</h1>
+    <p>Visitors can report an inaccurate destination record. Resolve or reject each report and fix the destination itself if needed.</p></div>
+</section>
+
+<section class="section section--tight">
+  <div class="container admin-layout">
+    {% include "admin/_nav.html" %}
+    <div>
+      <div class="cluster" style="margin-bottom:var(--space-4)">
+        <a class="chip {{ 'is-active' if not status }}" href="{{ url_for('admin.corrections') }}">All</a>
+        {% for value in ["new", "reviewing", "resolved", "rejected"] %}
+          <a class="chip {{ 'is-active' if status == value }}" href="{{ url_for('admin.corrections', status=value) }}">{{ value|capitalize }}</a>
+        {% endfor %}
+      </div>
+
+      {% if corrections %}
+        <div class="stack">
+          {% for report in corrections %}
+            <article class="card" style="padding:var(--space-4)">
+              <div class="between" style="align-items:flex-start">
+                <div>
+                  <h2 style="font-size:1.05rem;margin-bottom:2px">
+                    {% if report.place %}<a href="{{ url_for('places.detail', slug=report.place.slug) }}">{{ report.place.name }}</a>{% else %}Unknown destination{% endif %}
+                  </h2>
+                  <p class="text-muted" style="font-size:.85rem;margin:0">
+                    {{ report.reporter_email or "No email supplied" }} · {{ report.created_at.strftime("%d %b %Y %H:%M") if report.created_at else "" }}
+                  </p>
+                </div>
+                <span class="badge {{ 'badge--pending' if report.status == 'new' else 'badge--muted' }}">{{ report.status }}</span>
+              </div>
+              <p style="margin-top:12px">{{ report.message }}</p>
+              <div class="cluster">
+                <form method="post" action="{{ url_for('admin.update_correction', report_id=report.id) }}" class="cluster">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <select name="status" aria-label="Status" style="width:auto">
+                    {% for value in ["new", "reviewing", "resolved", "rejected"] %}
+                      <option value="{{ value }}" {{ "selected" if report.status == value }}>{{ value|capitalize }}</option>
+                    {% endfor %}
+                  </select>
+                  <input name="admin_note" value="{{ report.admin_note or '' }}" placeholder="Internal note" maxlength="300">
+                  <button class="btn btn--secondary btn--sm" type="submit">Update</button>
+                </form>
+                {% if report.place %}<a class="btn btn--ghost btn--sm" href="{{ url_for('admin.place_edit', place_id=report.place.id) }}">Edit destination</a>{% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state"><h3>No correction reports</h3><p>Reports submitted from destination pages appear here.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

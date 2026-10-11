@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}{{ itinerary.title }} — shared trip — Tripura Explore{% endblock %}
+{% block description %}A read-only Tripura itinerary shared by a Tripura Explore traveller.{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <p class="eyebrow">Shared itinerary · read only</p>
+    <h1>{{ itinerary.title }}</h1>
+    <p>
+      {{ itinerary.duration_days }} day{{ "" if itinerary.duration_days == 1 else "s" }} starting from
+      {{ itinerary.starting_location }}{% if itinerary.travel_date %} on {{ itinerary.travel_date.strftime("%d %B %Y") }}{% endif %}.
+    </p>
+    <div class="tag-row">
+      {% for interest in itinerary.interests_list %}<span class="chip" style="cursor:default">{{ interest }}</span>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="container">
+    {% set total = itinerary.stops|length %}
+    {% if total %}
+      <div class="grid grid--2">
+        {% for day, stops in itinerary.stops_by_day().items() %}
+          <div class="day-column">
+            <div class="between">
+              <h3 style="margin:0">Day {{ day }}</h3>
+              <span class="badge badge--muted">{{ stops|length }} stop{{ "" if stops|length == 1 else "s" }}</span>
+            </div>
+            <ol class="timeline" style="margin-top:var(--space-4)">
+              {% for stop in stops %}
+                <li class="timeline__item">
+                  <span class="timeline__marker">{{ stop.stop_order }}</span>
+                  <div class="timeline__body">
+                    <h4 style="margin:0;font-size:1rem"><a href="{{ url_for('places.detail', slug=stop.place.slug) }}">{{ stop.place.name }}</a></h4>
+                    <p class="text-muted" style="font-size:.84rem;margin:4px 0 0">
+                      {{ stop.place.category_name }}{% if stop.place.locality %} · {{ stop.place.locality }}{% endif %}
+                    </p>
+                  </div>
+                </li>
+              {% endfor %}
+            </ol>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state"><h3>This itinerary is empty</h3><p>The owner removed every stop.</p></div>
+    {% endif %}
+
+    <div class="notice mt-6">
+      <strong>{{ icon("info", 16) }} About this link</strong>
+      <p class="mb-0">
+        This page is a read-only snapshot shared by the trip owner. It does not expose the owner's account details.
+        Start your own plan in the <a href="{{ url_for('itineraries.trip_planner') }}">trip planner</a>.
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

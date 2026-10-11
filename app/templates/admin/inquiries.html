@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}Inquiries — Admin — Tripura Explore{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container"><p class="eyebrow">Admin</p><h1>Visitor inquiries</h1>
+    <p>Personal details submitted with an inquiry are only visible on this page. Update the status as you process each one.</p></div>
+</section>
+
+<section class="section section--tight">
+  <div class="container admin-layout">
+    {% include "admin/_nav.html" %}
+    <div>
+      <div class="cluster" style="margin-bottom:var(--space-4)">
+        <a class="chip {{ 'is-active' if not status }}" href="{{ url_for('admin.inquiries') }}">All</a>
+        {% for value in ["new", "in_progress", "closed"] %}
+          <a class="chip {{ 'is-active' if status == value }}" href="{{ url_for('admin.inquiries', status=value) }}">{{ value|replace("_", " ")|capitalize }}</a>
+        {% endfor %}
+      </div>
+
+      {% if inquiries %}
+        <div class="stack">
+          {% for inquiry in inquiries %}
+            <article class="card" style="padding:var(--space-4)">
+              <div class="between" style="align-items:flex-start">
+                <div>
+                  <h2 style="font-size:1.05rem;margin-bottom:2px">{{ inquiry.business.name if inquiry.business else "Unknown provider" }}</h2>
+                  <p class="text-muted" style="font-size:.85rem;margin:0">
+                    {{ inquiry.name }} · {{ inquiry.email }}{% if inquiry.phone %} · {{ inquiry.phone }}{% endif %}
+                    · {{ inquiry.created_at.strftime("%d %b %Y %H:%M") if inquiry.created_at else "" }}
+                  </p>
+                </div>
+                <span class="badge {{ 'badge--pending' if inquiry.status == 'new' else 'badge--muted' }}">{{ inquiry.status|replace("_", " ") }}</span>
+              </div>
+              <p style="margin-top:12px">{{ inquiry.message }}</p>
+              {% if inquiry.admin_note %}<p class="text-muted" style="font-size:.85rem"><strong>Internal note:</strong> {{ inquiry.admin_note }}</p>{% endif %}
+              <form method="post" action="{{ url_for('admin.update_inquiry', inquiry_id=inquiry.id) }}" class="form-row" style="align-items:end">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="field">
+                  <label for="status-{{ inquiry.id }}">Status</label>
+                  <select id="status-{{ inquiry.id }}" name="status">
+                    {% for value in ["new", "in_progress", "closed"] %}
+                      <option value="{{ value }}" {{ "selected" if inquiry.status == value }}>{{ value|replace("_", " ")|capitalize }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="note-{{ inquiry.id }}">Internal note</label>
+                  <input id="note-{{ inquiry.id }}" name="admin_note" value="{{ inquiry.admin_note or '' }}" maxlength="300">
+                </div>
+                <button class="btn btn--secondary btn--sm" type="submit">Update</button>
+              </form>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state"><h3>No inquiries in this view</h3><p>Visitor inquiries submitted from the Local Experiences pages appear here.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
