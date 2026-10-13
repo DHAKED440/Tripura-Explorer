@@ -88,7 +88,15 @@
                           {% endfor %}
                         </select>
                         {% if stop.place.directions_url %}
-                          <a class="btn btn--ghost btn--sm" href="{{ stop.place.directions_url }}" target="_blank" rel="noopener noreferrer">{{ icon("compass", 15) }} Directions</a>
+                          <a class="btn btn--ghost btn--sm"
+                             href="{{ stop.place.directions_url }}"
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             data-live-directions
+                             data-lat="{{ '%.5f'|format(stop.place.latitude) if stop.place.has_coordinates else '' }}"
+                             data-lng="{{ '%.5f'|format(stop.place.longitude) if stop.place.has_coordinates else '' }}"
+                             data-name="{{ stop.place.name }}"
+                             data-locality="{{ stop.place.locality or '' }}">{{ icon("compass", 15) }} Directions</a>
                         {% endif %}
                       </div>
                     </div>

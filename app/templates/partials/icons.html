@@ -77,10 +77,65 @@
 <path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.6"/>
 {%- elif name == "settings" -%}
 <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 11.5 4a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 22 11a2 2 0 1 1 0 4Z"/>
+{%- elif name == "crosshair" -%}
+<circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/>
+{%- elif name == "navigation" -%}
+<polygon points="3 11 22 2 13 21 11 13 3 11"/>
 {%- endif -%}
 </svg>
 {%- endmacro %}
 
 {% macro category_icon(slug, size=20) -%}
 {{ icon(slug if slug in ["leaf","landmark","waves","mountain","paw","mask"] else "compass", size) }}
+{%- endmacro %}
+
+{% macro category_colorful_icon(slug, size=22) -%}
+{%- if slug == "nature" or slug == "leaf" -%}
+<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M20.5 3.5C13 3.5 6 8.5 5.2 16.2C5 17.5 5.8 18.8 7 19.3C8.2 19.8 14.5 20.5 19.5 13C21 10.5 20.8 6.5 20.5 3.5Z" fill="#2E7D32" stroke="#256828" stroke-width="1.2"/>
+  <path d="M5.5 20C8.5 17 12.5 13 18.5 6.5" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+  <path d="M12 13.5C13.5 13.8 15 13.2 15.8 12.5" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M9.5 16C10.5 16.5 11.8 16 12.5 15.5" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round"/>
+</svg>
+{%- elif slug == "heritage" or slug == "landmark" -%}
+<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="#D97724" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M12 2.5L2.5 7.5V9H21.5V7.5L12 2.5Z"/>
+  <rect x="3.5" y="10" width="17" height="1.8" rx="0.5"/>
+  <rect x="4.5" y="12.8" width="2.4" height="6.4" rx="0.4"/>
+  <rect x="9" y="12.8" width="2.4" height="6.4" rx="0.4"/>
+  <rect x="13.2" y="12.8" width="2.4" height="6.4" rx="0.4"/>
+  <rect x="17.5" y="12.8" width="2.4" height="6.4" rx="0.4"/>
+  <rect x="2.5" y="20.2" width="19" height="1.8" rx="0.5"/>
+</svg>
+{%- elif slug == "hills" or slug == "mountain" -%}
+<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M2.5 19.5L8.5 8.5L13.5 17L16.8 11.5L21.5 19.5H2.5Z" fill="#388E5A" stroke="#2D7449" stroke-width="1.2" stroke-linejoin="round"/>
+  <path d="M8.5 8.5L10.8 12.8L9.2 13.8L8 12.8L8.5 8.5Z" fill="#FFFFFF" fill-opacity="0.85"/>
+  <path d="M16.8 11.5L18.8 14.8L17.5 15.6L16.2 14.8L16.8 11.5Z" fill="#FFFFFF" fill-opacity="0.85"/>
+</svg>
+{%- elif slug == "lakes" or slug == "waves" -%}
+<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M2.5 7C4.5 5.6 6.5 5.6 8.5 7C10.5 8.4 12.5 8.4 14.5 7C16.5 5.6 18.5 5.6 21.5 7" stroke="#1565C0" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M2.5 12C4.5 10.6 6.5 10.6 8.5 12C10.5 13.4 12.5 13.4 14.5 12C16.5 10.6 18.5 10.6 21.5 12" stroke="#1565C0" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M2.5 17C4.5 15.6 6.5 15.6 8.5 17C10.5 18.4 12.5 18.4 14.5 17C16.5 15.6 18.5 15.6 21.5 17" stroke="#1565C0" stroke-width="2.3" stroke-linecap="round"/>
+</svg>
+{%- elif slug == "temples" or slug == "temple" -%}
+<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="#D97724" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M12 2L10.5 4.5H13.5L12 2Z"/>
+  <path d="M12 4.5L8.5 8.5H15.5L12 4.5Z"/>
+  <rect x="5.5" y="9.5" width="13" height="1.8" rx="0.4"/>
+  <rect x="6.5" y="12.2" width="2.4" height="7" rx="0.4"/>
+  <rect x="10.8" y="12.2" width="2.4" height="7" rx="0.4"/>
+  <rect x="15.1" y="12.2" width="2.4" height="7" rx="0.4"/>
+  <rect x="3.5" y="20" width="17" height="2" rx="0.5"/>
+</svg>
+{%- elif slug == "culture" or slug == "mask" -%}
+<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="#D97724" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M12 2C7 2 4.5 5 4.5 10.5C4.5 16.5 8 20.8 12 22C16 20.8 19.5 16.5 19.5 10.5C19.5 5 17 2 12 2ZM8 7.5C9 7.5 9.8 8.3 9.8 9.3C9.8 10.3 9 11.1 8 11.1C7 11.1 6.2 10.3 6.2 9.3C6.2 8.3 7 7.5 8 7.5ZM16 7.5C17 7.5 17.8 8.3 17.8 9.3C17.8 10.3 17 11.1 16 11.1C15 11.1 14.2 10.3 14.2 9.3C14.2 8.3 15 7.5 16 7.5ZM12 18.5C9.5 18.5 7.8 16.8 7.5 16H16.5C16.2 16.8 14.5 18.5 12 18.5Z"/>
+  <path d="M4.5 6L2.5 3.5L5.5 4L4.5 6Z"/>
+  <path d="M19.5 6L21.5 3.5L18.5 4L19.5 6Z"/>
+</svg>
+{%- else -%}
+{{ icon("compass", size) }}
+{%- endif -%}
 {%- endmacro %}

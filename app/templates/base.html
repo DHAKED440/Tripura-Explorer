@@ -7,6 +7,9 @@
   <title>{% block title %}{{ site_name }} — {{ site_tagline }}{% endblock %}</title>
   <meta name="description" content="{% block description %}Discover destinations across Tripura, plan a day-wise trip and find local experiences.{% endblock %}">
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
@@ -19,7 +22,7 @@
   <header class="site-header">
     <div class="container site-header__inner">
       <a class="brand" href="{{ url_for('main.home') }}">
-        <span class="brand__mark" aria-hidden="true">TE</span>
+        <span class="brand__mark" aria-hidden="true">{{ icon("mountain", 20) }}</span>
         <span class="brand__text">
           Tripura Explore
           <small>Discover Tripura</small>
@@ -36,6 +39,7 @@
           <li><a class="nav__link {{ 'is-active' if request.endpoint == 'main.home' }}" href="{{ url_for('main.home') }}">Home</a></li>
           <li><a class="nav__link {{ 'is-active' if request.endpoint == 'places.explore' }}" href="{{ url_for('places.explore') }}">Explore Places</a></li>
           <li><a class="nav__link {{ 'is-active' if request.endpoint == 'map.map_page' }}" href="{{ url_for('map.map_page') }}">Map</a></li>
+          <li><a class="nav__link {{ 'is-active' if request.endpoint == 'smart_route.lab_page' }}" href="{{ url_for('smart_route.lab_page') }}">Smart Route Lab</a></li>
           <li><a class="nav__link {{ 'is-active' if request.endpoint == 'itineraries.trip_planner' }}" href="{{ url_for('itineraries.trip_planner') }}">Trip Planner</a></li>
           <li><a class="nav__link {{ 'is-active' if request.endpoint == 'experiences.index' }}" href="{{ url_for('experiences.index') }}">Local Experiences</a></li>
           {% if current_user.is_authenticated %}
@@ -86,6 +90,7 @@
         <div>
           <h4>Plan</h4>
           <ul class="footer-list">
+            <li><a href="{{ url_for('smart_route.lab_page') }}">Smart Route Lab</a></li>
             <li><a href="{{ url_for('itineraries.trip_planner') }}">Trip planner</a></li>
             <li><a href="{{ url_for('itineraries.my_trips') if current_user.is_authenticated else url_for('auth.login') }}">Saved trips</a></li>
             <li><a href="{{ url_for('auth.profile') if current_user.is_authenticated else url_for('auth.register') }}">Your account</a></li>
@@ -101,8 +106,18 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <span>&copy; {{ current_year }} Tripura Explore — student/startup prototype.</span>
-        <span>Map data &copy; OpenStreetMap contributors.</span>
+        <span>&copy; {{ current_year }} Tripura Explore. All rights reserved.</span>
+        <div class="footer-social">
+          <a href="#" aria-label="Facebook" class="footer-social__link">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3V2z"/></svg>
+          </a>
+          <a href="#" aria-label="Instagram" class="footer-social__link">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5"/></svg>
+          </a>
+          <a href="#" aria-label="YouTube" class="footer-social__link">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.94 2C5.12 20 12 20 12 20s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg>
+          </a>
+        </div>
       </div>
     </div>
   </footer>

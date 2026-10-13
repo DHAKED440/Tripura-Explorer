@@ -51,7 +51,7 @@
       dayOptions +
       "</select>" +
       (place.directions_url
-        ? '<a class="btn btn--ghost btn--sm" href="' + escapeHtml(place.directions_url) + '" target="_blank" rel="noopener noreferrer">Directions</a>'
+        ? '<a class="btn btn--ghost btn--sm" href="' + escapeHtml(place.directions_url) + '" target="_blank" rel="noopener noreferrer" data-live-directions data-lat="' + (place.latitude != null ? place.latitude : '') + '" data-lng="' + (place.longitude != null ? place.longitude : '') + '" data-name="' + escapeHtml(place.name || '') + '">Directions</a>'
         : "") +
       "</div></div></li>"
     );

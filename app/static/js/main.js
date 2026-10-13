@@ -181,6 +181,96 @@
     });
   });
 
+  /* --- live directions with device geolocation ---------------------------- */
+  var userLocationCache = null;
+
+  function initLiveDirections() {
+    document.addEventListener("click", function (event) {
+      var btn = event.target.closest("[data-live-directions]");
+      if (!btn) return;
+
+      var lat = btn.getAttribute("data-lat");
+      var lng = btn.getAttribute("data-lng");
+      var name = btn.getAttribute("data-name") || "Destination";
+      var fallbackUrl = btn.getAttribute("href") || "";
+
+      var destination = "";
+      if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
+        destination = parseFloat(lat).toFixed(6) + "," + parseFloat(lng).toFixed(6);
+      } else if (name) {
+        destination = encodeURIComponent(name + ", Tripura, India");
+      }
+
+      if (!destination && !fallbackUrl) return;
+
+      function openMaps(originCoords) {
+        var finalUrl = "https://www.google.com/maps/dir/?api=1";
+        if (originCoords) {
+          finalUrl += "&origin=" + encodeURIComponent(originCoords);
+        }
+        finalUrl += "&destination=" + (destination || "") + "&travelmode=driving";
+
+        var win = window.open(finalUrl, "_blank", "noopener,noreferrer");
+        if (!win || win.closed || typeof win.closed === "undefined") {
+          window.location.href = finalUrl;
+        }
+      }
+
+      // If we already have a recent live GPS reading (< 5 minutes old)
+      if (userLocationCache && (Date.now() - userLocationCache.timestamp < 300000)) {
+        event.preventDefault();
+        openMaps(userLocationCache.coords.latitude.toFixed(6) + "," + userLocationCache.coords.longitude.toFixed(6));
+        return;
+      }
+
+      if (!navigator.geolocation) {
+        event.preventDefault();
+        openMaps(null);
+        return;
+      }
+
+      event.preventDefault();
+
+      var originalPointer = btn.style.pointerEvents;
+      btn.style.pointerEvents = "none";
+      showToast("Acquiring your exact live GPS location...", "info");
+
+      var timer = window.setTimeout(function () {
+        btn.style.pointerEvents = originalPointer;
+        showToast("Opening directions with device GPS location...", "info");
+        openMaps(null);
+      }, 7000);
+
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          window.clearTimeout(timer);
+          btn.style.pointerEvents = originalPointer;
+          userLocationCache = {
+            coords: pos.coords,
+            timestamp: Date.now()
+          };
+          openMaps(pos.coords.latitude.toFixed(6) + "," + pos.coords.longitude.toFixed(6));
+        },
+        function (err) {
+          window.clearTimeout(timer);
+          btn.style.pointerEvents = originalPointer;
+          if (err.code === err.PERMISSION_DENIED) {
+            showToast("Location access denied. Launching maps with device GPS.", "info");
+          } else {
+            showToast("Opening directions using device GPS.", "info");
+          }
+          openMaps(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 7000,
+          maximumAge: 0
+        }
+      );
+    });
+  }
+  initLiveDirections();
+
   window.TripuraExplore = {
     apiFetch: apiFetch,
     csrfToken: csrfToken,

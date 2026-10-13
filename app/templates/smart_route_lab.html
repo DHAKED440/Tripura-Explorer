@@ -1,0 +1,1097 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Smart Route Lab — Graph Theory & Journey Optimization — Tripura Explore{% endblock %}
+{% block description %}Explore Tripura's road network through graph theory, client-side algorithmic route optimization (Dijkstra, A*, Bellman-Ford, Kruskal MST, 2-Opt TSP), and personalized multi-objective journey planning.{% endblock %}
+
+{% block head %}
+<!-- Leaflet Map Styles -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<!-- KaTeX Mathematics Rendering Styles -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<!-- Smart Route Lab Stylesheet -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/smart_route_lab.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Dedicated Smart Route Lab High-Tech Hero Header -->
+<section class="smart-lab-hero">
+  <div class="container">
+    <div class="smart-lab-hero__inner">
+      <div style="flex: 1; min-width: 320px;">
+        <div class="smart-lab-hero__meta-badges">
+          <span class="smart-lab-hero__badge is-online">
+            <span class="smart-lab-hero__pulse"></span> Solver Online
+          </span>
+          <span class="smart-lab-hero__badge is-amber">
+            {{ icon("compass", 13) }} Graph Theory &amp; Optimization
+          </span>
+          <span class="smart-lab-hero__badge">
+            Network \( G = (V, E) \)
+          </span>
+        </div>
+        <h1 class="smart-lab-hero__title">
+          Smart Route Lab
+        </h1>
+        <p class="smart-lab-hero__desc">
+          Model Tripura as an authentic highway network graph \( G = (V, E) \). Run exact graph algorithms client-side with step-by-step state animations, evaluate multi-objective Pareto trade-offs, and synthesize personalized itineraries.
+        </p>
+        <div class="smart-lab-hero__quick-stats">
+          <span class="smart-lab-hero__stat-pill">
+            {{ icon("map-pin", 13) }} {{ metrics.node_count if metrics else places|length }} Destinations
+          </span>
+          <span class="smart-lab-hero__stat-pill">
+            {{ icon("git-commit", 13) }} {{ metrics.edge_count if metrics else 25 }} Corridors
+          </span>
+          <span class="smart-lab-hero__stat-pill">
+            {{ icon("cpu", 13) }} Client-Side Generator Engine
+          </span>
+          <span class="smart-lab-hero__stat-pill">
+            {{ icon("shield-check", 13) }} 100% Offline Capable
+          </span>
+        </div>
+      </div>
+
+      <!-- Mode Switcher Pill -->
+      <div class="mode-toggle-group" role="tablist" aria-label="Lab Experience Mode">
+        <button type="button" class="mode-toggle-btn is-active" id="btn-mode-tourist" role="tab" aria-selected="true" data-mode="tourist">
+          {{ icon("compass", 16) }} Tourist Mode
+        </button>
+        <button type="button" class="mode-toggle-btn" id="btn-mode-explorer" role="tab" aria-selected="false" data-mode="explorer">
+          {{ icon("layers", 16) }} Graph Explorer
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Network Topology Metrics Deck -->
+<section class="section section--tight" style="padding-top: var(--space-5);">
+  <div class="container">
+    <div class="metrics-deck">
+      <div class="metric-card">
+        <span class="metric-card__label">Graph Vertices</span>
+        <span class="metric-card__value" id="metric-nodes">{{ metrics.node_count if metrics else places|length }}</span>
+        <span class="metric-card__sub">\( |V| \) Destinations</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-card__label">Network Edges</span>
+        <span class="metric-card__value" id="metric-edges">{{ metrics.edge_count if metrics else 25 }}</span>
+        <span class="metric-card__sub">\( |E| \) Highway Corridors</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-card__label">Average Degree</span>
+        <span class="metric-card__value" id="metric-avg-degree">{{ metrics.avg_degree if metrics else '3.13' }}</span>
+        <span class="metric-card__sub">\( \bar{d} = 2|E|/|V| \)</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-card__label">Graph Density</span>
+        <span class="metric-card__value" id="metric-density">{{ metrics.density if metrics else '0.208' }}</span>
+        <span class="metric-card__sub">Planar Sparse Road Network</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-card__label">Components</span>
+        <span class="metric-card__value" id="metric-components">{{ metrics.connected_components if metrics else 1 }}</span>
+        <span class="metric-card__sub">\( k = 1 \) Connected Highway</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-card__label">Engine Mode</span>
+        <span class="metric-card__value" id="metric-engine-status" style="color: #10b981; font-size:1.4rem;">
+          Client Engine
+        </span>
+        <span class="metric-card__sub">100% Offline Capable</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Main Laboratory Interactive Workstation -->
+<section class="section" style="padding-top: 0;">
+  <div class="container">
+    <div class="lab-layout">
+      <!-- Left Panel: Controls & Settings -->
+      <aside class="lab-panel">
+        <!-- Natural Language AI Bar -->
+        <div class="ai-prompt-box">
+          <div class="ai-prompt-box__label">
+            {{ icon("search", 14) }} AI Journey Assistant
+            <span class="badge" style="background:#e0e7ff; color:#3730a3; font-size:0.68rem; margin-left:auto;">Natural Language NLP</span>
+          </div>
+          <p style="font-size:0.8rem; color:#64748b; margin:0;">
+            Type your travel request in plain English (e.g. <em>"2 days heritage trip from Agartala under 200 km"</em>).
+          </p>
+          <div class="ai-prompt-box__row">
+            <input type="text" id="ai-query-input" class="ai-prompt-input"
+                   placeholder="e.g. 3-day spiritual and lake tour from Agartala..."
+                   aria-label="Natural language journey prompt">
+            <button type="button" class="btn btn--primary btn--sm" id="btn-parse-ai-query">
+              Plan
+            </button>
+          </div>
+          <div id="ai-query-feedback" style="display:none; font-size:0.82rem; padding:6px 10px; border-radius:4px; margin-top:4px;"></div>
+        </div>
+
+        <!-- Mode Specific Forms -->
+        <!-- 1. Tourist Mode Form -->
+        <div id="form-tourist-mode">
+          <div class="lab-panel__header">
+            <h2 class="lab-panel__title">{{ icon("compass", 18) }} Personalized Journey Planner</h2>
+          </div>
+
+          <form id="journey-planner-form" onsubmit="return false;">
+            <div class="field">
+              <label for="tourist-start-node">Origin Hub</label>
+              <select id="tourist-start-node" class="form-select">
+                {% for place in places %}
+                  <option value="{{ place.id }}" {% if place.id == default_start_id %}selected{% endif %}>
+                    {{ place.name }} ({{ place.district.name if place.district else 'Tripura' }})
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-top: var(--space-3);">
+              <div class="field">
+                <label for="tourist-days">Trip Duration</label>
+                <select id="tourist-days" class="form-select">
+                  <option value="1">1 Day</option>
+                  <option value="2" selected>2 Days</option>
+                  <option value="3">3 Days</option>
+                  <option value="4">4 Days</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="tourist-max-hours">Daily Road Hours</label>
+                <select id="tourist-max-hours" class="form-select">
+                  <option value="4">4 Hours (Relaxed)</option>
+                  <option value="6" selected>6 Hours (Balanced)</option>
+                  <option value="8">8 Hours (Full Day)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-top: var(--space-3);">
+              <div class="field">
+                <label for="tourist-interest">Primary Theme</label>
+                <select id="tourist-interest" class="form-select">
+                  <option value="all" selected>All Highlights</option>
+                  <option value="heritage">Heritage & Palaces</option>
+                  <option value="spiritual">Temples & Faith</option>
+                  <option value="nature">Hills & Lakes</option>
+                  <option value="wildlife">Wildlife & Sanctuaries</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="tourist-pace">Travel Pace</label>
+                <select id="tourist-pace" class="form-select">
+                  <option value="relaxed">Relaxed (1-2 places/day)</option>
+                  <option value="moderate" selected>Moderate (2-3 places/day)</option>
+                  <option value="fast">Fast (3-4 places/day)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field" style="margin-top: var(--space-3);">
+              <label for="tourist-objective">Optimization Goal</label>
+              <select id="tourist-objective" class="form-select">
+                <option value="balanced" selected>Balanced Multi-Objective (Time + Cost + Quality)</option>
+                <option value="time">Minimum Travel Time (Fastest Highway)</option>
+                <option value="distance">Shortest Road Distance (Minimum km)</option>
+                <option value="cost">Most Economical (Low Toll & Fuel)</option>
+              </select>
+            </div>
+
+            <button type="button" class="btn btn--primary" id="btn-generate-itinerary" style="width:100%; margin-top: var(--space-4);">
+              {{ icon("compass", 16) }} Synthesize Personalized Itinerary
+            </button>
+          </form>
+        </div>
+
+        <!-- 2. Graph Explorer Mode Form -->
+        <div id="form-explorer-mode" style="display: none;">
+          <div class="lab-panel__header">
+            <h2 class="lab-panel__title">{{ icon("layers", 18) }} Graph Algorithm Studio</h2>
+          </div>
+
+          <form id="algorithm-studio-form" onsubmit="return false;">
+            <div class="field">
+              <label for="algo-choice">Select Algorithm</label>
+              <select id="algo-choice" class="form-select">
+                <option value="dijkstra" selected>Dijkstra (Single-Source Shortest Path)</option>
+                <option value="astar">A* Search (Haversine Admissible Heuristic)</option>
+                <option value="bellman_ford">Bellman-Ford (Dynamic Programming Shortest Path)</option>
+                <option value="kruskal">Kruskal MST (Minimum Spanning Tree via DSU)</option>
+                <option value="tsp">Held-Karp TSP / 2-Opt (Multi-Stop Tour)</option>
+                <option value="bfs">BFS (Layer-by-Layer Breadth Search)</option>
+                <option value="dfs">DFS (Topological Depth-First Traversal)</option>
+              </select>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-top: var(--space-3);">
+              <div class="field">
+                <label for="algo-start-node">Source Vertex \( s \)</label>
+                <select id="algo-start-node" class="form-select">
+                  {% for place in places %}
+                    <option value="{{ place.id }}" {% if place.id == default_start_id %}selected{% endif %}>
+                      {{ place.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="field" id="field-target-node">
+                <label for="algo-target-node">Target Vertex \( t \)</label>
+                <select id="algo-target-node" class="form-select">
+                  {% for place in places %}
+                    <option value="{{ place.id }}" {% if loop.index == 2 %}selected{% endif %}>
+                      {{ place.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="field" style="margin-top: var(--space-3);" id="field-edge-metric">
+              <label for="algo-edge-metric">Edge Weight Metric \( w(u, v) \)</label>
+              <select id="algo-edge-metric" class="form-select">
+                <option value="time" selected>Travel Time (minutes)</option>
+                <option value="distance">Road Distance (kilometers)</option>
+                <option value="cost">Estimated Road Cost (INR)</option>
+                <option value="balanced">Balanced Composite Cost</option>
+              </select>
+            </div>
+
+            <!-- Multi-Stop Picker for TSP -->
+            <div id="field-tsp-stops" style="display: none; margin-top: var(--space-3);">
+              <label style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;">Multi-Stop Destinations:</label>
+              <div class="stops-selector" style="max-height: 140px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 8px;">
+                {% for place in places %}
+                  <label style="display: flex; align-items:center; gap: 8px; font-size: 0.85rem; margin-bottom: 4px; cursor:pointer;">
+                    <input type="checkbox" name="tsp_stops" value="{{ place.id }}" {% if loop.index in [1, 2, 4, 6] %}checked{% endif %}>
+                    {{ place.name }}
+                  </label>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Validation Notice -->
+            <div id="explorer-validation-banner" class="validation-banner" style="display:none;"></div>
+
+            <button type="button" class="btn btn--primary" id="btn-run-algorithm" style="width:100%; margin-top: var(--space-4);">
+              {{ icon("check", 16) }} Execute Algorithm & Compute Steps
+            </button>
+          </form>
+        </div>
+
+        <!-- Active Journey Summary Card -->
+        <div id="active-route-summary" style="display:none; margin-top: var(--space-5); border-top: 1px solid var(--color-border); padding-top: var(--space-4);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+            <h3 style="font-size:1rem; font-weight:700; margin:0;" id="summary-route-title">Solution Metrics</h3>
+            <span class="badge badge--success" id="summary-route-badge">Optimal</span>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85rem;">
+            <div style="background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
+              <span style="color:#64748b; display:block; font-size:0.75rem;">Total Distance</span>
+              <strong id="summary-distance" style="font-size:1rem; color:var(--color-primary);">-</strong>
+            </div>
+            <div style="background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
+              <span style="color:#64748b; display:block; font-size:0.75rem;">Total Driving Time</span>
+              <strong id="summary-time" style="font-size:1rem; color:var(--color-primary);">-</strong>
+            </div>
+            <div style="background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
+              <span style="color:#64748b; display:block; font-size:0.75rem;">Estimated Cost</span>
+              <strong id="summary-cost" style="font-size:1rem; color:var(--color-primary);">-</strong>
+            </div>
+            <div style="background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
+              <span style="color:#64748b; display:block; font-size:0.75rem;">Stops Visited</span>
+              <strong id="summary-stops-count" style="font-size:1rem; color:var(--color-primary);">-</strong>
+            </div>
+          </div>
+
+          <!-- Solution Explanation -->
+          <p id="summary-explanation" style="font-size:0.83rem; color:#475569; margin: 10px 0; line-height:1.4;"></p>
+
+          <div style="display:flex; gap: 8px; margin-top: 10px;">
+            <button type="button" class="btn btn--secondary btn--sm" id="btn-open-save-modal" style="flex:1;">
+              {{ icon("heart", 14) }} Save Route
+            </button>
+            <button type="button" class="btn btn--ghost btn--sm" id="btn-export-json">
+              {{ icon("external", 14) }} Export JSON
+            </button>
+          </div>
+        </div>
+
+        <!-- Multi-Day Itinerary Container (Tourist Mode) -->
+        <div id="tourist-schedule-container" style="display:none; margin-top: var(--space-5); border-top: 1px solid var(--color-border); padding-top: var(--space-4);">
+          <h3 style="font-size:1rem; font-weight:700; margin-bottom: 12px; color:var(--color-primary);">
+            Day-by-Day Schedule
+          </h3>
+          <div id="tourist-schedule-cards"></div>
+        </div>
+      </aside>
+
+      <!-- Right Panel: Dual Visualizer Stage -->
+      <main class="visualizer-wrapper">
+        <!-- Visualizer Toolbar -->
+        <div class="visualizer-toolbar">
+          <div class="visualizer-toggle-btns">
+            <button type="button" class="visualizer-view-btn" id="btn-view-map" data-view="map">
+              {{ icon("map", 14) }} Map Only
+            </button>
+            <button type="button" class="visualizer-view-btn" id="btn-view-graph" data-view="graph">
+              {{ icon("layers", 14) }} Graph Only
+            </button>
+            <button type="button" class="visualizer-view-btn is-active" id="btn-view-split" data-view="split">
+              {{ icon("compass", 14) }} Split View
+            </button>
+          </div>
+
+          <div style="display:flex; align-items:center; gap: 10px;">
+            <label for="toolbar-weight-select" style="font-size:0.82rem; font-weight:600; color:#475569;">Weight:</label>
+            <select id="toolbar-weight-select" class="speed-select">
+              <option value="time">Travel Time (min)</option>
+              <option value="distance">Distance (km)</option>
+              <option value="cost">Toll & Fuel (INR)</option>
+            </select>
+            <button type="button" class="player-btn" id="btn-reset-view" title="Reset Camera View">
+              Reset Camera
+            </button>
+          </div>
+        </div>
+
+        <!-- Stage Container -->
+        <div class="visualizer-stage is-split" id="visualizer-stage">
+          <!-- Left Pane: Geographic Map -->
+          <div id="map-pane" style="height:100%; position:relative;">
+            <div id="leaflet-map"></div>
+          </div>
+          <!-- Right Pane: Abstract Graph Canvas -->
+          <div id="graph-pane" style="height:100%; position:relative; background:#f8fafc;">
+            <canvas id="graph-canvas"></canvas>
+            <div style="position:absolute; bottom:12px; right:12px; background:rgba(255,255,255,0.85); padding:4px 8px; border-radius:4px; font-size:0.75rem; color:#64748b; pointer-events:none;">
+              Drag nodes to rearrange
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Stats HUD Ribbon -->
+        <div class="live-stats-ribbon">
+          <div class="live-stat-item">
+            <span class="live-stat-item__label">Nodes Visited</span>
+            <span class="live-stat-item__value" id="hud-nodes-visited">0 / {{ places|length }}</span>
+          </div>
+          <div class="live-stat-item">
+            <span class="live-stat-item__label">Current Cost</span>
+            <span class="live-stat-item__value" id="hud-path-cost">0.0</span>
+          </div>
+          <div class="live-stat-item">
+            <span class="live-stat-item__label">Algorithm Progress</span>
+            <span class="live-stat-item__value" id="hud-step-progress">Step 0 / 0</span>
+          </div>
+          <div class="live-stat-item">
+            <span class="live-stat-item__label">Execution Time</span>
+            <span class="live-stat-item__value" id="hud-exec-time">0.0 ms</span>
+          </div>
+        </div>
+
+        <!-- Step-by-Step Algorithm Playback Controller -->
+        <div class="animation-controller">
+          <div class="player-btns">
+            <button type="button" class="player-btn" id="btn-anim-prev" title="Step Backward" disabled>
+              &larr; Prev
+            </button>
+            <button type="button" class="player-btn player-btn--primary" id="btn-anim-play" title="Play or Pause Algorithm Animation">
+              Play &#9658;
+            </button>
+            <button type="button" class="player-btn" id="btn-anim-next" title="Step Forward" disabled>
+              Next &rarr;
+            </button>
+            <button type="button" class="player-btn" id="btn-anim-reset" title="Reset Animation to Beginning">
+              Reset
+            </button>
+          </div>
+
+          <div class="step-indicator" id="anim-step-counter">
+            Step 0 of 0
+          </div>
+
+          <div style="display:flex; align-items:center; gap: 8px;">
+            <label for="anim-speed" style="font-size:0.82rem; color:#64748b;">Speed:</label>
+            <select id="anim-speed" class="speed-select">
+              <option value="0.5">0.5x</option>
+              <option value="1.0" selected>1.0x</option>
+              <option value="2.0">2.0x</option>
+              <option value="4.0">4.0x</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Live Step Explanation Callout -->
+        <div class="step-callout">
+          <span class="step-callout__badge" id="step-callout-badge">Graph Ready</span>
+          <span id="step-callout-text">Select an algorithm and click Play or Execute to trace generator state changes.</span>
+        </div>
+
+        <!-- State Trace Deck (Explorer Mode Only) -->
+        <div id="state-trace-deck" class="state-trace-deck" style="padding: 12px 16px; display: none;">
+          <div class="trace-card">
+            <div class="trace-card__title">Priority Queue / Open Set \( Q \)</div>
+            <div id="trace-queue-content" style="font-size: 0.82rem; color: #334155;">
+              <span class="text-muted">Queue is empty</span>
+            </div>
+          </div>
+          <div class="trace-card">
+            <div class="trace-card__title">Visited / Closed Set \( S \) & Distance \( d(v) \)</div>
+            <div id="trace-visited-content" style="font-size: 0.82rem; color: #334155;">
+              <span class="text-muted">No nodes visited yet</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================================
+     PART 3: Redesigned Multi-Objective Optimization Section
+     ========================================================================= -->
+<section class="section section--tight" id="pareto-comparison-section" style="padding-top: var(--space-4); border-top: 1px solid var(--color-border); background: #ffffff;">
+  <div class="container">
+    <div style="max-width: 820px; margin-bottom: var(--space-5);">
+      <p class="eyebrow" style="margin-bottom:4px; color:#e8892b; font-weight:700;">Multi-Objective Vector Optimization</p>
+      <h2 style="font-size: 1.85rem; margin:0 0 8px; color:var(--color-primary); font-weight:800;">
+        Balancing Multi-Objective Route Trade-offs & Pareto Dominance
+      </h2>
+      <p style="color:var(--color-muted); font-size:0.95rem; line-height:1.6; margin:0;">
+        Real road journeys must simultaneously balance conflicting criteria: minimizing driving time, minimizing distance, minimizing financial expenditure, and maximizing scenic or cultural enjoyment. We model this as vector optimization over graph paths \( \mathcal{P} \).
+      </p>
+    </div>
+
+    <!-- Mathematical Formulation Deck for MOO -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-5);">
+      <!-- Formula 1: Problem Statement -->
+      <div class="formula-card" style="margin-bottom:0;">
+        <div class="formula-card-header">
+          <h3 class="formula-card-title">1. Vector Problem Statement</h3>
+          <button type="button" class="copy-latex-btn" data-latex="\min_{P \in \mathcal{P}} \; \mathbf{F}(P) = \big( f_1(P), f_2(P), \dots, f_m(P) \big)">Copy LaTeX</button>
+        </div>
+        <div class="formula-display-box">
+          \[ \min_{P \in \mathcal{P}} \; \mathbf{F}(P) = \big( f_1(P), f_2(P), \dots, f_m(P) \big) \]
+        </div>
+        <div class="formula-legend">
+          <strong>Where:</strong> \( P \in \mathcal{P} \) is an admissible highway path between origin and destination; \( \mathbf{F}(P) \) is the objective vector containing distance \( f_1 \), travel time \( f_2 \), toll/fuel cost \( f_3 \), and inverted scenic score \( f_4 \).
+        </div>
+        <div class="formula-intuition">
+          <strong>Intuition:</strong> No single path simultaneously minimizes all goals; we must optimize the multi-dimensional vector.
+        </div>
+      </div>
+
+      <!-- Formula 2: Weighted-Sum Scalarization -->
+      <div class="formula-card" style="margin-bottom:0;">
+        <div class="formula-card-header">
+          <h3 class="formula-card-title">2. Weighted-Sum Scalarization</h3>
+          <button type="button" class="copy-latex-btn" data-latex="F(P) = \sum_{i=1}^{m} w_i f_i(P), \quad \sum_{i=1}^{m} w_i = 1,\; w_i \ge 0">Copy LaTeX</button>
+        </div>
+        <div class="formula-display-box">
+          \[ F(P) = \sum_{i=1}^{m} w_i \tilde f_i(P), \quad \sum_{i=1}^{m} w_i = 1,\; w_i \ge 0 \]
+        </div>
+        <div class="formula-legend">
+          <strong>Where:</strong> \( w_i \) represents user-selected preference weights; \( \tilde f_i \) are unitless normalized metrics constrained to sum strictly to \( 1.0 \).
+        </div>
+        <div class="formula-intuition">
+          <strong>Intuition:</strong> Converts multiple competing goals into a convex scalar score based on traveler priorities.
+        </div>
+      </div>
+
+      <!-- Formula 3: Metric Normalization -->
+      <div class="formula-card" style="margin-bottom:0;">
+        <div class="formula-card-header">
+          <h3 class="formula-card-title">3. Metric Normalization</h3>
+          <button type="button" class="copy-latex-btn" data-latex="\tilde f_i(P) = \dfrac{f_i(P) - f_i^{\min}}{f_i^{\max} - f_i^{\min}}">Copy LaTeX</button>
+        </div>
+        <div class="formula-display-box">
+          \[ \tilde f_i(P) = \dfrac{f_i(P) - f_i^{\min}}{f_i^{\max} - f_i^{\min}} \]
+        </div>
+        <div class="formula-legend">
+          <strong>Where:</strong> Prevents dimensional skew when summing incompatible units (e.g., kilometers, minutes, Indian Rupees).
+        </div>
+        <div class="formula-intuition">
+          <strong>Intuition:</strong> Maps all metrics onto the uniform domain \( [0, 1] \) so weights retain equal relative influence.
+        </div>
+      </div>
+
+      <!-- Formula 4: Pareto Dominance -->
+      <div class="formula-card" style="margin-bottom:0;">
+        <div class="formula-card-header">
+          <h3 class="formula-card-title">4. Pareto Dominance Condition</h3>
+          <button type="button" class="copy-latex-btn" data-latex="P_1 \prec P_2 \iff \forall i: f_i(P_1) \le f_i(P_2) \ \wedge\ \exists j: f_j(P_1) < f_j(P_2)">Copy LaTeX</button>
+        </div>
+        <div class="formula-display-box">
+          \[ P_1 \prec P_2 \iff \forall i: f_i(P_1) \le f_i(P_2) \ \wedge\ \exists j: f_j(P_1) < f_j(P_2) \]
+        </div>
+        <div class="formula-legend">
+          <strong>Where:</strong> Path \( P_1 \) strictly dominates \( P_2 \) if \( P_1 \) is no worse in any objective and strictly better in at least one.
+        </div>
+        <div class="formula-intuition">
+          <strong>Intuition:</strong> A dominated route is irrational to choose because another route is strictly superior without sacrifice.
+        </div>
+      </div>
+
+      <!-- Formula 5: epsilon-Constraint Method -->
+      <div class="formula-card" style="margin-bottom:0;">
+        <div class="formula-card-header">
+          <h3 class="formula-card-title">5. \(\varepsilon\)-Constraint Method</h3>
+          <button type="button" class="copy-latex-btn" data-latex="\min_{P \in \mathcal{P}} f_1(P) \quad \text{s.t.} \quad f_j(P) \le \varepsilon_j \;\; (\forall j \ne 1)">Copy LaTeX</button>
+        </div>
+        <div class="formula-display-box">
+          \[ \min_{P \in \mathcal{P}} f_1(P) \quad \text{s.t.} \quad f_j(P) \le \varepsilon_j \;\; (\forall j \ne 1) \]
+        </div>
+        <div class="formula-legend">
+          <strong>Where:</strong> Optimizes primary travel time \( f_1 \) while bounding secondary goals (e.g., maximum budget \( \le \varepsilon_2 \)).
+        </div>
+        <div class="formula-intuition">
+          <strong>Intuition:</strong> Discovers non-convex Pareto frontier points that weighted-sum scalarization might overlook.
+        </div>
+      </div>
+
+      <!-- Note 6: Tourist Mode Integration -->
+      <div class="formula-card" style="margin-bottom:0;">
+        <div class="formula-card-header">
+          <h3 class="formula-card-title">6. Tourist Mode Dynamic Weights</h3>
+          <button type="button" class="copy-latex-btn" data-latex="S(v) = w_i I(v) + w_p P(v) + w_f F(v) - w_t T(v)">Copy LaTeX</button>
+        </div>
+        <div class="formula-display-box">
+          \[ S(v) = w_i I(v) + w_p P(v) + w_f F(v) - w_t T(v) \]
+        </div>
+        <div class="formula-legend">
+          <strong>Where:</strong> Tourist Mode scores destinations using theme match \( I \), popularity \( P \), data verification \( F \), and detour time \( T \).
+        </div>
+        <div class="formula-intuition">
+          <strong>Intuition:</strong> Blends mathematical graph efficiency with tourist enjoyment and cultural preferences.
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive MOO Studio: Live Sliders & Live Pareto Scatter Canvas -->
+    <div class="moo-panel-layout">
+      <!-- Left: Interactive Weight Sliders -->
+      <div class="moo-controls-card">
+        <h3 style="font-size:1.1rem; font-weight:700; color:var(--color-primary); margin:0 0 6px;">
+          Interactive Objective Weights
+        </h3>
+        <p style="font-size:0.82rem; color:#64748b; margin:0 0 12px;">
+          Adjust preference sliders. Values automatically normalize so \( \sum w_i = 1.0 \).
+        </p>
+
+        <div class="weight-slider-group">
+          <!-- Slider 1: Travel Time -->
+          <div class="weight-slider-item">
+            <div class="weight-slider-header">
+              <span>Fastest Driving Time (\( w_{\text{time}} \))</span>
+              <span class="weight-slider-val" id="val-weight-time">0.34</span>
+            </div>
+            <input type="range" class="weight-range-input" id="slider-weight-time" min="0" max="100" value="34">
+            <div class="weight-progress-bar">
+              <div class="weight-progress-fill" id="bar-weight-time" style="width: 34%;"></div>
+            </div>
+          </div>
+
+          <!-- Slider 2: Road Distance -->
+          <div class="weight-slider-item">
+            <div class="weight-slider-header">
+              <span>Minimum Distance (\( w_{\text{dist}} \))</span>
+              <span class="weight-slider-val" id="val-weight-dist">0.33</span>
+            </div>
+            <input type="range" class="weight-range-input" id="slider-weight-dist" min="0" max="100" value="33">
+            <div class="weight-progress-bar">
+              <div class="weight-progress-fill" id="bar-weight-dist" style="width: 33%;"></div>
+            </div>
+          </div>
+
+          <!-- Slider 3: Road Cost -->
+          <div class="weight-slider-item">
+            <div class="weight-slider-header">
+              <span>Economic Cost (\( w_{\text{cost}} \))</span>
+              <span class="weight-slider-val" id="val-weight-cost">0.20</span>
+            </div>
+            <input type="range" class="weight-range-input" id="slider-weight-cost" min="0" max="100" value="20">
+            <div class="weight-progress-bar">
+              <div class="weight-progress-fill" id="bar-weight-cost" style="width: 20%;"></div>
+            </div>
+          </div>
+
+          <!-- Slider 4: Scenic Score -->
+          <div class="weight-slider-item">
+            <div class="weight-slider-header">
+              <span>Scenic & Heritage (\( w_{\text{scenic}} \))</span>
+              <span class="weight-slider-val" id="val-weight-scenic">0.13</span>
+            </div>
+            <input type="range" class="weight-range-input" id="slider-weight-scenic" min="0" max="100" value="13">
+            <div class="weight-progress-bar">
+              <div class="weight-progress-fill" id="bar-weight-scenic" style="width: 13%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn--secondary btn--sm" id="btn-recalculate-pareto" style="width:100%; margin-top:8px;">
+          {{ icon("refresh", 14) }} Re-Evaluate Pareto Candidates
+        </button>
+      </div>
+
+      <!-- Right: Live Pareto Scatter Chart & Route Table -->
+      <div class="pareto-canvas-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
+          <div>
+            <h3 style="font-size:1.1rem; font-weight:700; color:var(--color-primary); margin:0;">
+              Live Pareto-Front Scatter Chart
+            </h3>
+            <span style="font-size:0.82rem; color:#64748b; display:block; margin-top:2px;" id="pareto-chart-subtitle">
+              Evaluating routes between selected destinations &bull; Horizontal: Time (min) &bull; Vertical: Cost (₹)
+            </span>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="badge badge--success" style="font-size:0.75rem;">Interactive Click</span>
+            <span class="badge" id="pareto-live-status-pill" style="font-size:0.75rem; background:#eff6ff; color:#1e40af;">Updated with Filters</span>
+          </div>
+        </div>
+
+        <!-- Canvas Container with explicit dimensions -->
+        <div class="pareto-canvas-container">
+          <canvas id="pareto-scatter-canvas" width="700" height="320" style="width:100%; height:320px; display:block;"></canvas>
+        </div>
+
+        <!-- Route Alternatives Comparison Table -->
+        <div style="overflow-x: auto;">
+          <table class="route-table" id="pareto-table">
+            <thead>
+              <tr>
+                <th>Route Profile</th>
+                <th>Objective Priority</th>
+                <th>Distance</th>
+                <th>Driving Time</th>
+                <th>Estimated Cost</th>
+                <th>Scenic Score</th>
+                <th>Pareto Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="pareto-table-body">
+              <tr>
+                <td colspan="8" style="text-align:center; padding: 20px; color:#64748b;">
+                  Loading empirical route alternatives across Tripura...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================================
+     PART 2: Redesigned Mathematical Foundations Section
+     ========================================================================= -->
+<section class="section" id="math-foundations-section" style="background: #f8fafc; border-top: 1px solid var(--color-border); padding-top: var(--space-6);">
+  <div class="container">
+    <div style="text-align:center; max-width: 720px; margin: 0 auto var(--space-6);">
+      <p class="eyebrow" style="color:#e8892b; font-weight:700; margin-bottom:4px;">Theoretical Foundation</p>
+      <h2 style="font-size: 2.1rem; color:var(--color-primary); margin: 4px 0 8px; font-weight:800;">
+        Mathematical Foundations of Routing
+      </h2>
+      <p style="color: var(--color-muted); font-size: 0.95rem; margin: 0; line-height:1.5;">
+        Complete textbook reference of formulas, relaxation criteria, and computational complexities driving every route calculation in Tripura Explorer.
+      </p>
+    </div>
+
+    <div class="math-section-container">
+      <!-- Sticky Table of Contents Sidebar -->
+      <aside class="math-toc-sidebar">
+        <span class="math-toc-title">Table of Contents</span>
+        <a href="#math-tab-graph" class="math-toc-link is-active" data-target="math-tab-graph">
+          1. Graph Definition <span>\( G=(V,E) \)</span>
+        </a>
+        <a href="#math-tab-cost" class="math-toc-link" data-target="math-tab-cost">
+          2. Path Cost Metric <span>\( w(P) \)</span>
+        </a>
+        <a href="#math-tab-dijkstra" class="math-toc-link" data-target="math-tab-dijkstra">
+          3. Dijkstra Relaxation <span>\( d[v] \)</span>
+        </a>
+        <a href="#math-tab-astar" class="math-toc-link" data-target="math-tab-astar">
+          4. A* Search <span>\( f=g+h \)</span>
+        </a>
+        <a href="#math-tab-bellman" class="math-toc-link" data-target="math-tab-bellman">
+          5. Bellman-Ford DP <span>\( d_k[v] \)</span>
+        </a>
+        <a href="#math-tab-mst" class="math-toc-link" data-target="math-tab-mst">
+          6. Kruskal MST <span>DSU</span>
+        </a>
+        <a href="#math-tab-tsp" class="math-toc-link" data-target="math-tab-tsp">
+          7. TSP & 2-Opt <span>Held-Karp</span>
+        </a>
+        <a href="#math-tab-haversine" class="math-toc-link" data-target="math-tab-haversine">
+          8. Haversine Distance <span>\( d_{\text{sph}} \)</span>
+        </a>
+        <a href="#math-tab-complexity" class="math-toc-link" data-target="math-tab-complexity">
+          9. Complexity Benchmarks <span>\( \mathcal{O} \)</span>
+        </a>
+      </aside>
+
+      <!-- Main Math Tabs & Cards Area -->
+      <div class="math-content-area">
+        <!-- Tab Navigation Buttons -->
+        <div class="math-tabs-nav" role="tablist">
+          <button type="button" class="math-tab-btn is-active" data-tab="math-tab-graph">Graph Definition</button>
+          <button type="button" class="math-tab-btn" data-tab="math-tab-cost">Path Cost</button>
+          <button type="button" class="math-tab-btn" data-tab="math-tab-dijkstra">Dijkstra</button>
+          <button type="button" class="math-tab-btn" data-tab="math-tab-astar">A* Heuristic</button>
+          <button type="button" class="math-tab-btn" data-tab="math-tab-bellman">Bellman-Ford</button>
+          <button type="button" class="math-tab-btn" data-tab="math-tab-mst">Kruskal MST</button>
+          <button type="button" class="math-tab-btn" data-tab="math-tab-tsp">TSP & 2-Opt</button>
+          <button type="button" class="math-tab-btn" data-tab="math-tab-haversine">Haversine Distance</button>
+          <button type="button" class="math-tab-btn" data-tab="math-tab-complexity">Time Complexity</button>
+        </div>
+
+        <!-- Panel 1: Graph Definition -->
+        <div class="math-tab-panel is-active" id="math-tab-graph">
+          <div class="formula-card">
+            <div class="formula-card-header">
+              <h3 class="formula-card-title">1. Graph Topology Formulation</h3>
+              <button type="button" class="copy-latex-btn" data-latex="G = (V, E), \quad w : E \to \mathbb{R}_{\ge 0}">Copy LaTeX</button>
+            </div>
+            <div class="formula-display-box">
+              \[ G = (V, E), \quad w : E \to \mathbb{R}_{\ge 0} \]
+            </div>
+            <div class="formula-legend">
+              <strong>Where:</strong>
+              <ul style="margin:4px 0 0; padding-left:18px;">
+                <li>\( V \): Set of destination vertices (destinations in Tripura, e.g. Agartala, Udaipur, Unakoti, Neermahal).</li>
+                <li>\( E \subseteq V \times V \): Set of authenticated highway corridors connecting destinations.</li>
+                <li>\( w(e) \ge 0 \): Non-negative weight mapping each edge to physical cost (travel time in minutes, road km, or INR).</li>
+              </ul>
+            </div>
+            <div class="formula-example">
+              <strong>Tripura Example:</strong> \( |V| = 16 \) verified destinations, \( |E| = 25 \) national/state highway corridors, average vertex degree \( \bar{d} = \frac{2|E|}{|V|} = \frac{50}{16} = 3.13 \).
+            </div>
+            <div class="formula-intuition">
+              <strong>Intuition:</strong> Represents physical geography as a mathematical sparse planar network where exact traversal theorems hold.
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 2: Path Cost Metric -->
+        <div class="math-tab-panel" id="math-tab-cost">
+          <div class="formula-card">
+            <div class="formula-card-header">
+              <h3 class="formula-card-title">2. Aggregate Path Cost</h3>
+              <button type="button" class="copy-latex-btn" data-latex="w(P) = \sum_{i=1}^{k-1} w(v_i, v_{i+1})">Copy LaTeX</button>
+            </div>
+            <div class="formula-display-box">
+              \[ w(P) = \sum_{i=1}^{k-1} w(v_i, v_{i+1}) \]
+            </div>
+            <div class="formula-legend">
+              <strong>Where:</strong>
+              <ul style="margin:4px 0 0; padding-left:18px;">
+                <li>\( P = (v_1, v_2, \dots, v_k) \): Sequence of vertices forming a continuous journey path.</li>
+                <li>\( w(v_i, v_{i+1}) \): Weight of the individual corridor leg between stop \( v_i \) and \( v_{i+1} \).</li>
+                <li>\( w(P) \): Total cumulative journey burden (additive metric).</li>
+              </ul>
+            </div>
+            <div class="formula-example">
+              <strong>Tripura Example:</strong> For path \( P = (\text{Agartala} \to \text{Bishalgarh} \to \text{Udaipur}) \): \( w(P) = 22.0\text{ km} + 29.2\text{ km} = 51.2\text{ km} \), driving time \( = 35\text{ min} + 40\text{ min} = 75\text{ min} \).
+            </div>
+            <div class="formula-intuition">
+              <strong>Intuition:</strong> Road travel cost is strictly additive along traversed highway segments without teleportation.
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 3: Dijkstra Relaxation -->
+        <div class="math-tab-panel" id="math-tab-dijkstra">
+          <div class="formula-card">
+            <div class="formula-card-header">
+              <h3 class="formula-card-title">3. Dijkstra Edge Relaxation Recurrence</h3>
+              <button type="button" class="copy-latex-btn" data-latex="d[v] \leftarrow \min\big\{ d[v],\; d[u] + w(u, v) \big\}">Copy LaTeX</button>
+            </div>
+            <div class="formula-display-box">
+              \[ d[v] \leftarrow \min\big\{ d[v],\; d[u] + w(u, v) \big\} \]
+            </div>
+            <div class="formula-legend">
+              <strong>Where:</strong>
+              <ul style="margin:4px 0 0; padding-left:18px;">
+                <li>\( d[u] \): Minimum known distance from origin hub \( s \) to vertex \( u \).</li>
+                <li>\( w(u, v) \): Weight of highway connection from \( u \) to candidate neighbor \( v \).</li>
+                <li>\( d[v] \): Tentative distance to \( v \), updated whenever a shorter route through \( u \) is discovered.</li>
+              </ul>
+            </div>
+            <div class="formula-example">
+              <strong>Tripura Example:</strong> Current tentative distance to Udaipur is \( d[\text{Udaipur}] = 85\text{ min} \). Exploring via Bishalgarh where \( d[\text{Bishalgarh}] = 35\text{ min} \) and \( w(\text{Bishalgarh}, \text{Udaipur}) = 40\text{ min} \): updated \( d[\text{Udaipur}] \leftarrow \min(85, 35 + 40) = 75\text{ min} \).
+            </div>
+            <div class="formula-intuition">
+              <strong>Intuition:</strong> Greedily extracts the closest unvisited vertex from a min-heap; once extracted, its distance is mathematically guaranteed to be minimal.
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 4: A* Heuristic & Admissibility -->
+        <div class="math-tab-panel" id="math-tab-astar">
+          <div class="formula-card">
+            <div class="formula-card-header">
+              <h3 class="formula-card-title">4. A* Evaluation & Admissibility Guarantee</h3>
+              <button type="button" class="copy-latex-btn" data-latex="f(n) = g(n) + h(n), \quad h(n) \le h^*(n), \quad h(u) \le w(u, v) + h(v)">Copy LaTeX</button>
+            </div>
+            <div class="formula-display-box">
+              \[ f(n) = g(n) + h(n), \quad \text{with} \quad h(n) \le h^*(n) \quad \text{and} \quad h(u) \le w(u, v) + h(v) \]
+            </div>
+            <div class="formula-legend">
+              <strong>Where:</strong>
+              <ul style="margin:4px 0 0; padding-left:18px;">
+                <li>\( g(n) \): Exact road cost from source \( s \) to node \( n \) discovered so far.</li>
+                <li>\( h(n) \): Heuristic estimate from node \( n \) to goal target \( t \).</li>
+                <li>\( f(n) \): Total estimated journey cost through node \( n \).</li>
+                <li><strong>Admissibility (\( h(n) \le h^*(n) \)):</strong> The heuristic never overestimates the true remaining distance.</li>
+                <li><strong>Consistency / Monotonicity:</strong> Triangle inequality holds: \( h(u) \le w(u, v) + h(v) \).</li>
+              </ul>
+            </div>
+            <div class="formula-example">
+              <strong>Tripura Example:</strong> Driving from Agartala to Unakoti. True road distance is \( 178\text{ km} \). Spherical Haversine straight-line distance is \( 108.4\text{ km} \). Because \( 108.4 \le 178 \), the heuristic is strictly admissible!
+            </div>
+            <div class="formula-intuition">
+              <strong>Intuition:</strong> A straight line on Earth's surface is always shorter than winding road corridors; therefore, A* never prunes the true optimal route.
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 5: Bellman-Ford DP -->
+        <div class="math-tab-panel" id="math-tab-bellman">
+          <div class="formula-card">
+            <div class="formula-card-header">
+              <h3 class="formula-card-title">5. Bellman-Ford Dynamic Programming Recurrence</h3>
+              <button type="button" class="copy-latex-btn" data-latex="d_k[v] = \min\Big( d_{k-1}[v],\; \min_{(u, v) \in E} \big( d_{k-1}[u] + w(u, v) \big) \Big)">Copy LaTeX</button>
+            </div>
+            <div class="formula-display-box">
+              \[ d_k[v] = \min\Big( d_{k-1}[v],\; \min_{(u, v) \in E} \big( d_{k-1}[u] + w(u, v) \big) \Big) \]
+            </div>
+            <div class="formula-legend">
+              <strong>Where:</strong>
+              <ul style="margin:4px 0 0; padding-left:18px;">
+                <li>\( d_k[v] \): Shortest distance from source \( s \) to \( v \) using at most \( k \) corridor edges.</li>
+                <li>Repeats for \( k = 1, 2, \dots, |V| - 1 \).</li>
+                <li><strong>Negative Cycle Check:</strong> If \( d_{|V|}[v] < d_{|V|-1}[v] \) on pass \( |V| \), an absorbing negative cycle exists.</li>
+              </ul>
+            </div>
+            <div class="formula-example">
+              <strong>Tripura Example:</strong> Across \( |V| = 16 \) nodes, Bellman-Ford performs up to 15 relaxation sweeps over all 25 edges, terminating early when no distance improves.
+            </div>
+            <div class="formula-intuition">
+              <strong>Intuition:</strong> A simple path can contain at most \( |V|-1 \) edges. Checking all edges in each pass guarantees global convergence even if edge costs vary.
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 6: Kruskal Minimum Spanning Tree -->
+        <div class="math-tab-panel" id="math-tab-mst">
+          <div class="formula-card">
+            <div class="formula-card-header">
+              <h3 class="formula-card-title">6. Kruskal's Minimum Spanning Tree (MST)</h3>
+              <button type="button" class="copy-latex-btn" data-latex="\min_{T \subseteq E} \sum_{e \in T} w(e) \quad \text{s.t.} \quad (V, T) \text{ is connected and acyclic}">Copy LaTeX</button>
+            </div>
+            <div class="formula-display-box">
+              \[ \min_{T \subseteq E} \sum_{e \in T} w(e) \quad \text{s.t.} \quad (V, T) \text{ is connected and acyclic} \]
+            </div>
+            <div class="formula-legend">
+              <strong>Where:</strong>
+              <ul style="margin:4px 0 0; padding-left:18px;">
+                <li>\( T \): Tree subset of edges containing exactly \( |V| - 1 \) corridors connecting all destinations.</li>
+                <li><strong>Cut Property:</strong> The minimum-weight edge crossing any cut in \( G \) must belong to the MST.</li>
+                <li>Uses <strong>Disjoint-Set Union (DSU)</strong> with near-constant \( \mathcal{O}(\alpha(|V|)) \) cycle checking.</li>
+              </ul>
+            </div>
+            <div class="formula-example">
+              <strong>Tripura Example:</strong> Connects all 16 major cultural destinations with exactly \( 15 \) highway links totaling \( 412.5\text{ km} \), minimizing total infrastructure cost.
+            </div>
+            <div class="formula-intuition">
+              <strong>Intuition:</strong> Greedily add the lightest road corridor in the state that doesn't create a loop until all destinations are united.
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 7: TSP & 2-Opt -->
+        <div class="math-tab-panel" id="math-tab-tsp">
+          <div class="formula-card">
+            <div class="formula-card-header">
+              <h3 class="formula-card-title">7. Travelling Salesperson (TSP) & 2-Opt Local Search</h3>
+              <button type="button" class="copy-latex-btn" data-latex="C(S, j) = \min_{i \in S \setminus \{j\}} \big[ C(S \setminus \{j\}, i) + d(i, j) \big]">Copy LaTeX</button>
+            </div>
+            <div class="formula-display-box">
+              \[ C(S, j) = \min_{i \in S \setminus \{j\}} \big[ C(S \setminus \{j\}, i) + d(i, j) \big] \]
+            </div>
+            <div class="formula-legend">
+              <strong>Where:</strong>
+              <ul style="margin:4px 0 0; padding-left:18px;">
+                <li>\( C(S, j) \): Minimum cost of a path visiting all vertices in subset \( S \) exactly once, starting at origin hub and ending at vertex \( j \).</li>
+                <li><strong>2-Opt Swap Criterion:</strong> A pair of edges \( (u_1, v_1) \) and \( (u_2, v_2) \) is replaced by \( (u_1, u_2) \) and \( (v_1, v_2) \) whenever \( d(u_1, u_2) + d(v_1, v_2) < d(u_1, v_1) + d(u_2, v_2) \).</li>
+              </ul>
+            </div>
+            <div class="formula-example">
+              <strong>Tripura Example:</strong> A 4-stop tour: Agartala \(\to\) Sepahijala \(\to\) Neermahal \(\to\) Udaipur \(\to\) Agartala. 2-Opt eliminates highway criss-crossing, saving 28 km of unnecessary backtracking.
+            </div>
+            <div class="formula-intuition">
+              <strong>Intuition:</strong> Untangles crossing paths on the road map by reversing sub-tours that reduce total distance.
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 8: Haversine Distance -->
+        <div class="math-tab-panel" id="math-tab-haversine">
+          <div class="formula-card">
+            <div class="formula-card-header">
+              <h3 class="formula-card-title">8. Geodesic Haversine Distance Formula</h3>
+              <button type="button" class="copy-latex-btn" data-latex="d = 2R \arcsin\left( \sqrt{\sin^2\left(\frac{\Delta\phi}{2}\right) + \cos\phi_1\cos\phi_2\sin^2\left(\frac{\Delta\lambda}{2}\right)} \right)">Copy LaTeX</button>
+            </div>
+            <div class="formula-display-box">
+              \[ d = 2R \arcsin\left( \sqrt{\sin^2\left(\frac{\Delta\phi}{2}\right) + \cos\phi_1\cos\phi_2\sin^2\left(\frac{\Delta\lambda}{2}\right)} \right) \]
+            </div>
+            <div class="formula-legend">
+              <strong>Where:</strong>
+              <ul style="margin:4px 0 0; padding-left:18px;">
+                <li>\( \phi_1, \phi_2 \): Geodetic latitudes of source and destination in radians.</li>
+                <li>\( \lambda_1, \lambda_2 \): Geodetic longitudes in radians (\( \Delta\phi = \phi_2 - \phi_1 \), \( \Delta\lambda = \lambda_2 - \lambda_1 \)).</li>
+                <li>\( R = 6,371.0\text{ km} \): Earth's mean volumetric radius.</li>
+              </ul>
+            </div>
+            <div class="formula-example">
+              <strong>Tripura Example:</strong> Agartala (\( 23.8364^\circ\text{N}, 91.2775^\circ\text{E} \)) to Udaipur (\( 23.5337^\circ\text{N}, 91.4817^\circ\text{E} \)): \( \Delta\phi = -0.3027^\circ \), \( \Delta\lambda = +0.2042^\circ \). Great-circle distance \( d = 39.4\text{ km} \). Real road distance via NH-8 is \( 51.2\text{ km} \).
+            </div>
+            <div class="formula-intuition">
+              <strong>Intuition:</strong> Calculates true great-circle spherical distance over Earth's curvature without map projection distortion.
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 9: Time Complexity Benchmarks -->
+        <div class="math-tab-panel" id="math-tab-complexity">
+          <div class="formula-card">
+            <div class="formula-card-header">
+              <h3 class="formula-card-title">9. Algorithm Complexity Benchmarks</h3>
+              <button type="button" class="copy-latex-btn" data-latex="\text{Dijkstra: } \mathcal{O}((|V|+|E|)\log |V|), \;\; \text{A*: } \mathcal{O}(b^d), \;\; \text{Bellman-Ford: } \mathcal{O}(|V||E|)">Copy LaTeX</button>
+            </div>
+            <p style="font-size:0.86rem; color:#475569; margin: 0 0 10px;">
+              Asymptotic time and space complexity comparison across all laboratory algorithms:
+            </p>
+            <table class="complexity-table">
+              <thead>
+                <tr>
+                  <th>Algorithm</th>
+                  <th>Time Complexity</th>
+                  <th>Space Complexity</th>
+                  <th>Optimality Guarantee</th>
+                  <th>Best Use-Case</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>BFS</strong></td>
+                  <td>\( \mathcal{O}(|V| + |E|) \)</td>
+                  <td>\( \mathcal{O}(|V|) \)</td>
+                  <td>Optimal for unweighted graphs</td>
+                  <td>Minimum highway transit hops</td>
+                </tr>
+                <tr>
+                  <td><strong>DFS</strong></td>
+                  <td>\( \mathcal{O}(|V| + |E|) \)</td>
+                  <td>\( \mathcal{O}(|V|) \)</td>
+                  <td>Non-optimal</td>
+                  <td>Topological connectivity & cycles</td>
+                </tr>
+                <tr>
+                  <td><strong>Dijkstra</strong></td>
+                  <td>\( \mathcal{O}((|V| + |E|)\log |V|) \)</td>
+                  <td>\( \mathcal{O}(|V|) \)</td>
+                  <td>Exact global minimum (\( w \ge 0 \))</td>
+                  <td>Single-source shortest road path</td>
+                </tr>
+                <tr>
+                  <td><strong>A* Search</strong></td>
+                  <td>\( \mathcal{O}(|E|) \) best, \( \mathcal{O}(b^d) \) worst</td>
+                  <td>\( \mathcal{O}(|V|) \)</td>
+                  <td>Exact with admissible heuristic</td>
+                  <td>Point-to-point goal directed path</td>
+                </tr>
+                <tr>
+                  <td><strong>Bellman-Ford</strong></td>
+                  <td>\( \mathcal{O}(|V| \cdot |E|) \)</td>
+                  <td>\( \mathcal{O}(|V|) \)</td>
+                  <td>Exact (handles negative costs)</td>
+                  <td>Dynamic network & cycle detection</td>
+                </tr>
+                <tr>
+                  <td><strong>Kruskal MST</strong></td>
+                  <td>\( \mathcal{O}(|E| \log |E|) \)</td>
+                  <td>\( \mathcal{O}(|V| + |E|) \)</td>
+                  <td>Exact minimum total tree weight</td>
+                  <td>State-wide backbone highway design</td>
+                </tr>
+                <tr>
+                  <td><strong>Held-Karp TSP</strong></td>
+                  <td>\( \mathcal{O}(|V|^2 2^{|V|}) \) exact; \( \mathcal{O}(|V|^2) \) 2-Opt</td>
+                  <td>\( \mathcal{O}(|V| 2^{|V|}) \)</td>
+                  <td>Exact for \( N \le 10 \); heuristic for \( N > 10 \)</td>
+                  <td>Multi-destination tourist tours</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Save Route Modal -->
+<div id="save-route-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:var(--radius); max-width:480px; width:90%; padding:var(--space-6); box-shadow:var(--shadow-lg);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-4);">
+      <h3 style="margin:0; font-size:1.2rem; color:var(--color-primary);">Save Smart Route</h3>
+      <button type="button" class="btn btn--ghost btn--sm" id="btn-close-save-modal" style="padding:4px 8px;">&times;</button>
+    </div>
+    <form id="save-route-form" onsubmit="return false;">
+      <div class="field">
+        <label for="save-route-title">Route Name</label>
+        <input type="text" id="save-route-title" class="form-input" placeholder="e.g. 2-Day Western Tripura Circuit" required>
+      </div>
+      <div class="field" style="margin-top:var(--space-3);">
+        <label for="save-route-notes">Notes & Travel Tips (Optional)</label>
+        <textarea id="save-route-notes" class="form-textarea" rows="3" placeholder="Notes on roads, departure timings, fuel stops..."></textarea>
+      </div>
+      <div id="save-route-feedback" style="margin-top:12px; font-size:0.85rem; display:none;"></div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:var(--space-4);">
+        <button type="button" class="btn btn--ghost" id="btn-cancel-save">Cancel</button>
+        <button type="button" class="btn btn--primary" id="btn-confirm-save">Save Route</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<!-- KaTeX JS & Auto-Render Extension -->
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        onload="if (typeof renderMathInElement === 'function') { renderMathInElement(document.body, {delimiters:[{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}]}); }"></script>
+
+<!-- Embedded Server State Data -->
+<script id="initial-graph-data" type="application/json">{{ initial_graph_json|tojson }}</script>
+
+<!-- Smart Route Lab Scripts in exact dependency order -->
+<script src="{{ url_for('static', filename='js/client_algorithms.js') }}"></script>
+<script src="{{ url_for('static', filename='js/graph_visualization.js') }}"></script>
+<script src="{{ url_for('static', filename='js/map_visualization.js') }}"></script>
+<script src="{{ url_for('static', filename='js/algorithm_animation.js') }}"></script>
+<script src="{{ url_for('static', filename='js/smart_route_lab.js') }}"></script>
+{% endblock %}

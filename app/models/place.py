@@ -119,12 +119,12 @@ class Place(db.Model):
 
     @property
     def directions_url(self) -> str | None:
-        """External navigation link (never an invented in-app route)."""
+        """External navigation link taking device live location to destination coordinates."""
         if self.has_coordinates:
-            return f"https://www.google.com/maps/dir/?api=1&destination={self.latitude},{self.longitude}"
+            return f"https://www.google.com/maps/dir/?api=1&destination={self.latitude:.5f},{self.longitude:.5f}&travelmode=driving"
         if self.address or self.name:
             query = quote_plus(self.address or f"{self.name}, Tripura")
-            return f"https://www.google.com/maps/search/?api=1&query={query}"
+            return f"https://www.google.com/maps/dir/?api=1&destination={query}&travelmode=driving"
         return None
 
     def to_dict(self, include_admin_fields: bool = False) -> dict:

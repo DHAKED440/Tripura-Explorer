@@ -53,7 +53,16 @@
                     </p>
                   {% endif %}
                   {% if place.directions_url %}
-                    <a class="btn btn--ghost btn--sm" style="margin-top:8px" href="{{ place.directions_url }}" target="_blank" rel="noopener noreferrer">
+                    <a class="btn btn--ghost btn--sm"
+                       style="margin-top:8px"
+                       href="{{ place.directions_url }}"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       data-live-directions
+                       data-lat="{{ '%.5f'|format(place.latitude) if place.has_coordinates else '' }}"
+                       data-lng="{{ '%.5f'|format(place.longitude) if place.has_coordinates else '' }}"
+                       data-name="{{ place.name }}"
+                       data-locality="{{ place.locality or '' }}">
                       {{ icon("compass", 16) }} Directions
                     </a>
                   {% endif %}

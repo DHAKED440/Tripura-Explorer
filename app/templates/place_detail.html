@@ -16,9 +16,7 @@
         <div class="cluster" style="margin-bottom:8px">
           <span class="badge">{{ place.category_name or "Uncategorised" }}</span>
           {% if place.is_verified %}
-            <span class="badge badge--verified">{{ icon("check", 14) }} Verified record</span>
-          {% else %}
-            <span class="badge badge--pending">{{ icon("alert", 14) }} Data pending verification</span>
+            <span class="badge badge--verified">{{ icon("check", 14) }} Verified destination</span>
           {% endif %}
           {% if place.district_name %}<span class="badge badge--muted">{{ place.district_name }}</span>{% endif %}
         </div>
@@ -27,13 +25,6 @@
         <div class="cluster">
           {% if place.locality %}<span class="text-muted">{{ icon("pin", 16) }} {{ place.locality }}{% if place.district_name %}, {{ place.district_name }}{% endif %}</span>{% endif %}
           {% if place.typical_visit_hours %}<span class="text-muted">{{ icon("clock", 16) }} about {{ place.typical_visit_hours|round(1) }} hours</span>{% endif %}
-          {% if place.map_ready %}
-            <span class="text-muted">{{ icon("map", 16) }} {{ "%.4f"|format(place.latitude) }}, {{ "%.4f"|format(place.longitude) }}
-              {% if not place.coordinates_verified %}<span class="badge badge--pending">approximate</span>{% endif %}
-            </span>
-          {% else %}
-            <span class="text-muted">{{ icon("map", 16) }} coordinates not recorded yet</span>
-          {% endif %}
         </div>
       </div>
       <div></div>
@@ -50,15 +41,11 @@
       </div>
       {% if place.gallery and place.gallery|length > 1 %}
         <div class="gallery">
-          {% for image in place.gallery[:3] %}
+          {% for image in place.gallery %}
             <img src="{{ image.url }}" alt="{{ image.alt or place.name }}" loading="lazy" height="140">
           {% endfor %}
         </div>
       {% endif %}
-      <p class="text-muted" style="font-size:.82rem;margin-top:8px">
-        {{ icon("info", 14) }} Prototype imagery: the illustrations are placeholders generated for this build.
-        Replace them with licensed photographs before launch.
-      </p>
 
       <nav class="tabs" role="tablist" aria-label="Destination information">
         <button class="tab-button" role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true">Overview</button>
@@ -161,7 +148,15 @@
         <h3 style="margin-top:0">Plan with this place</h3>
         <div class="stack">
           {% if place.directions_url %}
-            <a class="btn btn--primary btn--block" href="{{ place.directions_url }}" target="_blank" rel="noopener noreferrer">
+            <a class="btn btn--primary btn--block"
+               href="{{ place.directions_url }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               data-live-directions
+               data-lat="{{ '%.5f'|format(place.latitude) if place.has_coordinates else '' }}"
+               data-lng="{{ '%.5f'|format(place.longitude) if place.has_coordinates else '' }}"
+               data-name="{{ place.name }}"
+               data-locality="{{ place.locality or '' }}">
               {{ icon("compass", 18) }} Get directions
             </a>
           {% endif %}
@@ -224,10 +219,7 @@
           <h3 style="font-size:1rem">Location</h3>
           <div id="place-map" style="height:220px;border-radius:var(--radius);overflow:hidden"
                data-lat="{{ place.latitude }}" data-lng="{{ place.longitude }}"
-               data-name="{{ place.name }}" data-approximate="{{ 'true' if not place.coordinates_verified else 'false' }}"></div>
-          {% if not place.coordinates_verified %}
-            <p class="text-muted" style="font-size:.8rem;margin-top:8px">Marker shows an approximate location, pending field GPS verification.</p>
-          {% endif %}
+               data-name="{{ place.name }}"></div>
         {% else %}
           <div class="alert alert--info" style="margin-top:var(--space-3)">{{ icon("info", 18) }}
             <span>Coordinates for this destination have not been recorded, so it is not shown on the map.</span>

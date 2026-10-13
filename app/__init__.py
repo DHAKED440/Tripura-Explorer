@@ -76,10 +76,12 @@ def _register_blueprints(app: Flask) -> None:
     from app.routes.main import bp as main_bp
     from app.routes.map import bp as map_bp
     from app.routes.places import bp as places_bp
+    from app.routes.smart_route import bp as smart_route_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(places_bp)
     app.register_blueprint(map_bp)
+    app.register_blueprint(smart_route_bp)
     app.register_blueprint(itineraries_bp)
     app.register_blueprint(experiences_bp)
     app.register_blueprint(auth_bp)

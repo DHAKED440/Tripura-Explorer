@@ -5,7 +5,7 @@ from tests.conftest import login
 def test_homepage_loads(client):
     response = client.get("/")
     assert response.status_code == 200
-    assert b"Discover the beauty of Tripura" in response.data
+    assert b"Hidden Beauty of" in response.data
 
 
 def test_homepage_contains_navigation_links(client):
@@ -38,7 +38,7 @@ def test_about_page(client):
 
 def test_categories_carry_their_counts(client):
     body = client.get("/").data
-    assert b"Popular categories" in body
+    assert b"Popular Destinations" in body
     assert b"Nature" in body
 
 

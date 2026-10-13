@@ -11,7 +11,7 @@ import pytest
 from app import create_app
 from app.extensions import db
 from app.models import Business, Category, District, Itinerary, ItineraryStop, Place, User
-from app.seed_data import seed_businesses, seed_categories, seed_districts, seed_places
+from app.seed_data import seed_businesses, seed_categories, seed_districts, seed_places, seed_route_connections
 
 ADMIN_EMAIL = "admin@example.com"
 ADMIN_PASSWORD = "admin-password"
@@ -28,6 +28,7 @@ def app():
         seed_districts()
         seed_places()
         seed_businesses()
+        seed_route_connections()
 
         admin = User(name="Site Admin", email=ADMIN_EMAIL, role="admin")
         admin.set_password(ADMIN_PASSWORD)

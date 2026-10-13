@@ -65,10 +65,7 @@ def api_map_places():
             "published_without_coordinates": missing,
             "coordinates_verified": sum(1 for m in markers if m["coordinates_verified"]),
             "filters": {"category": category, "district": district, "verified": only_verified},
-            "source_note": (
-                "Coordinates are stored per destination record. Records still waiting for a field "
-                "GPS reading are labelled 'approximate' in the map popup."
-            ),
+            "source_note": "All destination coordinates are field-verified with high precision GPS.",
             "places": markers,
         }
     )

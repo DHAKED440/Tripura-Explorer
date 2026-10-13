@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #ECEFF3;
+    font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+  }
+}
+
+/* Custom utilities */
+.glass-badge {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.hero-overlay {
+  background: linear-gradient(90deg, rgba(14, 26, 42, 0.62) 0%, rgba(14, 26, 42, 0.40) 42%, rgba(14, 26, 42, 0.12) 70%, transparent 100%);
+}
+
+@media (max-width: 768px) {
+  .hero-overlay {
+    background: linear-gradient(180deg, rgba(17, 29, 46, 0.94) 0%, rgba(17, 29, 46, 0.85) 60%, rgba(17, 29, 46, 0.4) 100%);
+  }
+}

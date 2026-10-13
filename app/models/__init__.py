@@ -9,6 +9,8 @@ from app.models.district import District
 from app.models.feedback import CorrectionReport
 from app.models.itinerary import Itinerary, ItineraryStop
 from app.models.place import Place
+from app.models.route_connection import RouteConnection
+from app.models.saved_smart_route import SavedSmartRoute
 from app.models.user import Favorite, User
 
 __all__ = [
@@ -21,5 +23,7 @@ __all__ = [
     "Itinerary",
     "ItineraryStop",
     "Place",
+    "RouteConnection",
+    "SavedSmartRoute",
     "User",
 ]

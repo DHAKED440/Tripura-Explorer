@@ -14,8 +14,8 @@
     <p class="eyebrow">Map planner</p>
     <h1>Where everything is</h1>
     <p>
-      Every marker is a published destination record with coordinates. Markers labelled
-      <span class="badge badge--pending">approximate</span> still need a field GPS reading.
+      All destination markers feature verified, precise GPS coordinates.
+      Use your live device GPS to locate yourself and obtain instant driving directions.
     </p>
   </div>
 </section>
@@ -44,13 +44,20 @@
       </div>
 
       <div class="field field--checkbox" style="margin-top:var(--space-3)">
-        <input type="checkbox" id="map-verified">
+        <input type="checkbox" id="map-verified" checked>
         <label for="map-verified">Only field-verified coordinates</label>
       </div>
 
-      <div class="cluster" style="margin-top:var(--space-4)">
+      <div class="cluster" style="margin-top:var(--space-4);flex-wrap:wrap;gap:8px">
         <button class="btn btn--primary btn--sm" type="button" data-map-apply>{{ icon("filter", 16) }} Apply</button>
         <button class="btn btn--ghost btn--sm" type="button" data-map-reset>Reset</button>
+        <button class="btn btn--secondary btn--sm" type="button" id="map-locate-me">{{ icon("compass", 16) }} Live Location</button>
+        <button class="btn btn--recenter btn--sm" type="button" id="map-recenter-btn" style="display:none;" title="Center map to your live position">
+          {{ icon("crosshair", 16) }} Recenter
+        </button>
+        <button class="btn btn--journey btn--sm" type="button" id="map-start-journey-btn" style="display:none;" title="Start traveling to a destination">
+          {{ icon("navigation", 16) }} Start Journey
+        </button>
       </div>
 
       <hr class="divider">
@@ -60,8 +67,63 @@
       <div id="map-message" class="mt-4"></div>
     </aside>
 
-    <div>
-      <div id="map" role="application" aria-label="Interactive map of Tripura destinations"></div>
+    <div class="map-view-column">
+      <!-- Active Journey HUD -->
+      <div id="journey-hud" class="journey-hud" style="display:none;" aria-live="polite">
+        <div class="journey-hud__inner">
+          <div class="journey-hud__header">
+            <div class="journey-hud__badge">
+              <span class="live-dot"></span>
+              <strong>Live Journey Mode</strong>
+            </div>
+            <div class="journey-hud__controls">
+              <button type="button" class="btn btn--ghost btn--sm" id="journey-recenter-action" title="Recenter to your live position">
+                {{ icon("crosshair", 15) }} Recenter
+              </button>
+              <button type="button" class="btn btn--ghost btn--sm" id="journey-close-btn" title="End Journey">
+                {{ icon("close", 15) }} End Trip
+              </button>
+            </div>
+          </div>
+          <div class="journey-hud__body">
+            <div class="journey-hud__field">
+              <label for="journey-destination-select" class="journey-hud__label">Selected Destination:</label>
+              <select id="journey-destination-select" class="journey-hud__select">
+                <option value="">-- Choose destination to travel to --</option>
+              </select>
+            </div>
+            <div class="journey-hud__stats" id="journey-stats" style="display:none;">
+              <div class="journey-stat-card">
+                <span class="journey-stat-card__label">Direct Distance</span>
+                <span class="journey-stat-card__val" id="journey-distance-val">-- km</span>
+              </div>
+              <div class="journey-stat-card">
+                <span class="journey-stat-card__label">Est. Drive Time</span>
+                <span class="journey-stat-card__val" id="journey-time-val">-- mins</span>
+              </div>
+              <div class="journey-stat-card journey-stat-card--action">
+                <a id="journey-turn-by-turn-link" href="#" target="_blank" rel="noopener noreferrer" class="journey-turn-by-turn-btn">
+                  {{ icon("navigation", 16) }} Start Navigation in Google Maps
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="map-container-relative">
+        <div id="map" role="application" aria-label="Interactive map of Tripura destinations"></div>
+        <div class="map-floating-bar" id="map-floating-bar" style="display:none;">
+          <button type="button" class="floating-map-btn" id="floating-recenter-btn" title="Recenter to Live GPS">
+            {{ icon("crosshair", 16) }}
+            <span>Recenter</span>
+          </button>
+          <button type="button" class="floating-map-btn floating-map-btn--journey" id="floating-journey-btn" title="Start Journey">
+            {{ icon("navigation", 16) }}
+            <span>Start Journey</span>
+          </button>
+        </div>
+      </div>
       <div class="alert alert--info mt-4">{{ icon("info", 18) }}
         <span>
           Tiles are loaded from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>.

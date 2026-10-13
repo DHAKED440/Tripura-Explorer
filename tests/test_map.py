@@ -50,7 +50,7 @@ def test_map_unknown_category_returns_no_markers(client):
 
 def test_verified_only_filter(client):
     payload = client.get("/api/places/map?verified=1").get_json()
-    assert payload["count"] == 0  # the prototype still has to field-verify coordinates
+    assert payload["count"] >= 1  # Field-verified coordinates are populated
     assert all(marker["coordinates_verified"] for marker in payload["places"])
 
 

@@ -55,6 +55,39 @@ CULTURAL_HIGHLIGHTS = [
         "community_reviewed": False,
     },
     {
+        "kind": "Festival",
+        "name": "Ashokastami Mela",
+        "month": "April",
+        "place": "Unakoti Hills (Kailashahar)",
+        "summary": (
+            "A historic hill pilgrimage and fair held at the sacred stream of Unakoti, drawing "
+            "thousands of devotees for sacred bathing amidst rock-cut sculptures."
+        ),
+        "community_reviewed": False,
+    },
+    {
+        "kind": "Festival",
+        "name": "Jampui Orange Festival",
+        "month": "November",
+        "place": "Vanghmun (Jampui Hills)",
+        "summary": (
+            "Annual orange harvest celebrations featuring vibrant Mizo folk music, dance, "
+            "handicrafts, and community feasts atop Tripura's highest ridge."
+        ),
+        "community_reviewed": False,
+    },
+    {
+        "kind": "Festival",
+        "name": "Neermahal Boat Race & Carnival",
+        "month": "September",
+        "place": "Rudrasagar Lake (Melaghar)",
+        "summary": (
+            "Traditional water festival where long wooden snake boats compete on Rudrasagar "
+            "lake against the majestic backdrop of Neermahal water palace."
+        ),
+        "community_reviewed": False,
+    },
+    {
         "kind": "Craft",
         "name": "Bamboo and cane craft",
         "month": "All year",
@@ -77,6 +110,17 @@ CULTURAL_HIGHLIGHTS = [
         "community_reviewed": False,
     },
     {
+        "kind": "Craft",
+        "name": "Shitalpati Natural Cool Mats",
+        "month": "All year",
+        "place": "Kumarghat & Santirbazar",
+        "summary": (
+            "Fine handwoven cooling mats made from wild Murta reeds, prized across the "
+            "region for retaining natural coolness during the hot summer season."
+        ),
+        "community_reviewed": False,
+    },
+    {
         "kind": "Food",
         "name": "Mui Borok and Berma",
         "month": "All year",
@@ -88,6 +132,28 @@ CULTURAL_HIGHLIGHTS = [
         "community_reviewed": False,
     },
     {
+        "kind": "Food",
+        "name": "Chakhwi and Bangui Rice",
+        "month": "All year",
+        "place": "Traditional Tripuri kitchens",
+        "summary": (
+            "Chakhwi is a signature bamboo shoot and pork/chicken curry cooked with natural alkali; "
+            "Bangui is sun-dried glutinous rice steamed inside aromatic herbal banana leaves."
+        ),
+        "community_reviewed": False,
+    },
+    {
+        "kind": "Food",
+        "name": "Matabari Peda",
+        "month": "All year",
+        "place": "Udaipur (Gomati district)",
+        "summary": (
+            "Iconic milk sweet prepared by slow-simmering pure buffalo milk with sugar and cardamom, "
+            "offered as prasad at the 500-year-old Tripura Sundari temple."
+        ),
+        "community_reviewed": False,
+    },
+    {
         "kind": "Performance",
         "name": "Hojagiri dance",
         "month": "Festivals such as Hojagiri / Garia",
@@ -95,6 +161,28 @@ CULTURAL_HIGHLIGHTS = [
         "summary": (
             "A balancing dance in which performers balance on the edge of a pitcher while "
             "moving a bottle on the head."
+        ),
+        "community_reviewed": False,
+    },
+    {
+        "kind": "Performance",
+        "name": "Lebang Boomani dance",
+        "month": "Harvest season (Autumn)",
+        "place": "Khowai & West Tripura",
+        "summary": (
+            "Charming harvest folk dance where Tripuri youth mimic the catching of festive insects "
+            "using rhythmic bamboo clappers (Tok-ka) to cheerful folk music."
+        ),
+        "community_reviewed": False,
+    },
+    {
+        "kind": "Performance",
+        "name": "Cheraw bamboo dance",
+        "month": "Orange festival & celebrations",
+        "place": "Jampui Hills (North Tripura)",
+        "summary": (
+            "Fast-paced traditional bamboo dance where skilled Mizo dancers leap in and out of "
+            "rhythmically clapping horizontal bamboo poles."
         ),
         "community_reviewed": False,
     },

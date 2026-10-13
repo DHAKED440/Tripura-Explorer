@@ -95,3 +95,20 @@ def test_short_correction_report_is_rejected(client, app, place):
 
     client.post(f"/places/{place.slug}/report", data={"message": "bad"}, follow_redirects=True)
     assert CorrectionReport.query.filter_by(place_id=place.id).count() == 0
+
+
+def test_directions_url_structure(place):
+    url = place.directions_url
+    assert url is not None
+    assert "https://www.google.com/maps/dir/?api=1" in url
+    assert "travelmode=driving" in url
+    assert f"destination={place.latitude:.5f},{place.longitude:.5f}" in url
+
+
+def test_place_detail_renders_live_directions_attributes(client, place):
+    response = client.get(f"/places/{place.slug}")
+    assert response.status_code == 200
+    assert b"data-live-directions" in response.data
+    assert f'data-lat="{place.latitude:.5f}"'.encode() in response.data
+    assert f'data-lng="{place.longitude:.5f}"'.encode() in response.data
+    assert b"Get directions" in response.data
