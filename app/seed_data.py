@@ -23,6 +23,7 @@ IMAGE_BASE = "/static/images/places"
 
 PLACE_PHOTO_OVERRIDES = {
     "neermahal": "neermahal.jpg",
+    "rudrasagar-lake": "rudrasagar-lake.jpg",
     "unakoti": "unakoti.jpg",
     "ujjayanta-palace": "ujjayanta-palace.jpg",
     "tripura-sundari-temple": "tripura-sundari-temple.jpg",
@@ -116,8 +117,8 @@ PLACES = [
         "category": "heritage",
         "district": "sepahijala",
         "locality": "Melaghar, Rudrasagar Lake",
-        "latitude": 23.4975,
-        "longitude": 91.3323,
+        "latitude": 23.5069,
+        "longitude": 91.3156,
         "best_season": "October to March",
         "entry_fee_indian": "₹50 (adults), ₹20 (children) · Shared boat ₹50/head",
         "entry_fee_foreign": "₹50 · Standard boat fare applies",
@@ -130,6 +131,36 @@ PLACES = [
         "accessibility_info": "Boat access with steps; confirm current arrangements at the jetty.",
         "safety_notes": "Lake crossings depend on weather and water level - follow the boat operator's instructions.",
         "image_alt": "Neermahal water palace on Rudrasagar lake.",
+    },
+    {
+        "name": "Rudrasagar Lake",
+        "slug": "rudrasagar-lake",
+        "tagline": "Ramsar wetland lake surrounding the historic Neermahal water palace",
+        "short_description": "A scenic Ramsar wetland lake in Sepahijala district famous for birdwatching and boat races.",
+        "description": (
+            "Rudrasagar Lake, also known as Rudijala, is a prominent freshwater lake and Ramsar "
+            "wetland of international importance located in the Melaghar block of Sepahijala district. "
+            "The lake is celebrated for its rich biodiversity, migratory bird populations, and for "
+            "housing the historic Neermahal palace in its center. Every year in July-August, traditional "
+            "boat race festivals draw thousands of visitors to the tranquil lake waters."
+        ),
+        "category": "lakes",
+        "district": "sepahijala",
+        "locality": "Melaghar",
+        "latitude": 23.5042,
+        "longitude": 91.3150,
+        "best_season": "October to March (Boat Race in July/August)",
+        "entry_fee_indian": "Free access to lake promenade · Boat ride ₹50–₹100",
+        "entry_fee_foreign": "Free access · Standard boat fares apply",
+        "opening_info": "Open 24 hours (Boating: 9:00 AM – 5:00 PM)",
+        "closed_day": "Open every day",
+        "typical_visit_hours": 2.0,
+        "extra_tags": "Nature,Heritage",
+        "popularity": 95,
+        "facilities": "Lakeside promenade, boat ghat, parking, food stalls and viewing decks.",
+        "accessibility_info": "Promenade is level; boat access requires boarding from stepped ghats.",
+        "safety_notes": "Wear life jackets during boat rides and stay within designated safety zones.",
+        "image_alt": "Tranquil waters of Rudrasagar Lake at sunset with boat jetty.",
     },
     {
         "name": "Unakoti",
@@ -145,8 +176,8 @@ PLACES = [
         "category": "heritage",
         "district": "unakoti",
         "locality": "Kailashahar",
-        "latitude": 24.3211,
-        "longitude": 92.0722,
+        "latitude": 24.3168,
+        "longitude": 92.0674,
         "best_season": "October to March (Ashokastami Mela in April)",
         "entry_fee_indian": "Free entry",
         "entry_fee_foreign": "Free entry",
@@ -174,8 +205,8 @@ PLACES = [
         "category": "temples",
         "district": "gomati",
         "locality": "Matabari, Udaipur",
-        "latitude": 23.5103,
-        "longitude": 91.4988,
+        "latitude": 23.5091,
+        "longitude": 91.4980,
         "best_season": "October to March (Diwali & Navratri festival peak)",
         "entry_fee_indian": "Free entry (darshan is free)",
         "entry_fee_foreign": "Free entry",
@@ -203,8 +234,8 @@ PLACES = [
         "category": "heritage",
         "district": "west-tripura",
         "locality": "Agartala",
-        "latitude": 23.8364,
-        "longitude": 91.2825,
+        "latitude": 23.8374,
+        "longitude": 91.2827,
         "best_season": "October to March",
         "entry_fee_indian": "₹20 (adults), ₹10 (students/children)",
         "entry_fee_foreign": "₹150",
@@ -224,15 +255,18 @@ PLACES = [
         "tagline": "The highest hill range in Tripura",
         "short_description": "A hill range in North Tripura known for viewpoints, orange orchards and Mizo villages.",
         "description": (
-            "The Jampui Hills form the highest hill range in Tripura, close to the Mizoram border. "
-            "Villages such as Vanghmun are known for orange orchards and viewpoints over the valleys, "
-            "and the area is a base for short treks and for the harvest season in November and December."
+            "The Jampui Hills form the highest hill range in Tripura, located in the Kanchanpur sub-division "
+            "of North Tripura district right along the border with Mizoram. "
+            "Villages such as Vanghmun are known for orange orchards and scenic viewpoints over the valleys, "
+            "and the area is a base for short treks and the annual Orange Festival in November and December."
         ),
         "category": "hills",
         "district": "north-tripura",
-        "locality": "Vanghmun",
-        "latitude": 23.9855,
-        "longitude": 92.2764,
+        "locality": "Vanghmun, Kanchanpur",
+        "address": "Kanchanpur Sub-Division, North Tripura, Tripura 799269, India",
+        "plus_code": "X78G+P3",
+        "latitude": 23.9667675,
+        "longitude": 92.2751563,
         "best_season": "October to March (Orange Festival in November)",
         "entry_fee_indian": "Free entry (village viewpoints open to all)",
         "entry_fee_foreign": "Free entry",
@@ -259,8 +293,8 @@ PLACES = [
         "category": "lakes",
         "district": "dhalai",
         "locality": "Gandacherra",
-        "latitude": 23.4542,
-        "longitude": 91.8214,
+        "latitude": 23.4680,
+        "longitude": 91.8450,
         "best_season": "October to March (Pous Sankranti Mela in January)",
         "entry_fee_indian": "Free entry to lake area · Boat ride ₹120–₹150/head",
         "entry_fee_foreign": "Free entry · Standard boat fares apply",
@@ -288,8 +322,8 @@ PLACES = [
         "category": "wildlife",
         "district": "sepahijala",
         "locality": "Bishalgarh",
-        "latitude": 23.6766,
-        "longitude": 91.3214,
+        "latitude": 23.6644,
+        "longitude": 91.3117,
         "best_season": "October to April (Peak migratory birds Nov–Feb)",
         "entry_fee_indian": "₹50 (adults), ₹25 (children)",
         "entry_fee_foreign": "₹100",
@@ -316,9 +350,9 @@ PLACES = [
         ),
         "category": "heritage",
         "district": "gomati",
-        "locality": "Amarpur",
-        "latitude": 23.5283,
-        "longitude": 91.6669,
+        "locality": "Amarpur, Gomati River",
+        "latitude": 23.5348,
+        "longitude": 91.6013,
         "best_season": "October to February",
         "entry_fee_indian": "Free entry to riverbank · Motorboat ride ₹150–₹200/head",
         "entry_fee_foreign": "Free entry to riverbank · Motorboat ride ₹150–₹200/head",
@@ -345,8 +379,8 @@ PLACES = [
         "category": "heritage",
         "district": "south-tripura",
         "locality": "Jolaibari",
-        "latitude": 23.1788,
-        "longitude": 91.4552,
+        "latitude": 23.2000,
+        "longitude": 91.6000,
         "best_season": "October to March (Pilak Festival in December)",
         "entry_fee_indian": "₹10 per person",
         "entry_fee_foreign": "₹100",
@@ -373,8 +407,13 @@ PLACES = [
         "category": "wildlife",
         "district": "south-tripura",
         "locality": "Rajnagar, Belonia",
-        "latitude": 23.2842,
-        "longitude": 91.3989,
+        # Recovered and decoded with openlocationcode 1.0.1 from the short code
+        # using the OpenStreetMap Belonia town point as the nearby reference.
+        # Verify this Plus Code center on Google Maps before marking verified.
+        "plus_code": "7CH2+PFW",
+        "address": "7CH2+PFW, Belonia - Bhabanipur Rd, Rajnagar, Joychandrapur, Tripura 799150",
+        "latitude": 23.2793625,
+        "longitude": 91.401203125,
         "best_season": "November to March",
         "entry_fee_indian": "₹20 (adults), ₹10 (children) · Safari permit extra",
         "entry_fee_foreign": "₹100",
@@ -400,9 +439,9 @@ PLACES = [
         ),
         "category": "temples",
         "district": "sepahijala",
-        "locality": "Kasba",
-        "latitude": 23.7412,
-        "longitude": 91.1578,
+        "locality": "Kasba, Sepahijala",
+        "latitude": 23.7402,
+        "longitude": 91.1591,
         "best_season": "October to March (Navratri & Durga Puja fair)",
         "entry_fee_indian": "Free entry",
         "entry_fee_foreign": "Free entry",
@@ -429,8 +468,8 @@ PLACES = [
         "category": "temples",
         "district": "gomati",
         "locality": "Udaipur",
-        "latitude": 23.5320,
-        "longitude": 91.4930,
+        "latitude": 23.5290,
+        "longitude": 91.5050,
         "best_season": "October to March",
         "entry_fee_indian": "Free entry",
         "entry_fee_foreign": "Free entry",
@@ -485,8 +524,8 @@ PLACES = [
         "category": "culture",
         "district": "west-tripura",
         "locality": "Kunjaban, Agartala",
-        "latitude": 23.8562,
-        "longitude": 91.2882,
+        "latitude": 23.8559,
+        "longitude": 91.2846,
         "best_season": "October to March",
         "entry_fee_indian": "₹10 (adults), ₹5 (children)",
         "entry_fee_foreign": "₹50",
@@ -512,9 +551,11 @@ PLACES = [
         ),
         "category": "wildlife",
         "district": "gomati",
-        "locality": "Gandacherra",
-        "latitude": 23.4500,
-        "longitude": 91.8100,
+        "locality": "Mukchhari",
+        "address": "FR3H+5P2, Mukchhari, Tripura 799104, India",
+        # Center decoded from the user-provided short Plus Code; confirm the pin on Google Maps.
+        "latitude": 23.4528875,
+        "longitude": 91.82926563,
         "best_season": "October to March",
         "entry_fee_indian": "Free entry (permits available at range office)",
         "entry_fee_foreign": "Free entry",
@@ -1868,15 +1909,41 @@ def seed_places() -> int:
                 {"url": f"{IMAGE_BASE}/{data['slug']}-1.jpg", "alt": f"{data['name']} architecture and visitor view"},
                 {"url": f"{IMAGE_BASE}/{data['slug']}-2.jpg", "alt": f"{data['name']} landscape panorama"},
             ]
-            values["coordinates_verified"] = True
-            values["coordinate_source"] = "Field GPS Verified (High Precision)"
+            if data["slug"] == "trishna-wildlife-sanctuary":
+                values["coordinates_verified"] = False
+                values["coordinate_source"] = (
+                    "User-provided Plus Code 7CH2+PFW, decoded with openlocationcode 1.0.1; verify on Google Maps"
+                )
+                values["verification_notes"] = (
+                    "Short Plus Code recovered using the OpenStreetMap Belonia town point (23.2497879, 91.4550309) "
+                    "and decoded to its cell center. Confirm the destination pin on Google Maps before marking verified."
+                )
+                values["source_note"] = "Sanctuary location supplied by the project owner as Plus Code and full address."
+            elif data["slug"] == "gumti-wildlife-sanctuary":
+                values["coordinates_verified"] = False
+                values["coordinate_source"] = "User-provided Plus Code FR3H+5P2; Google Maps verification pending"
+                values["verification_notes"] = (
+                    "Plus Code supplied by the project owner; decoded center is approximate to the Plus Code cell. Confirm the pin on Google Maps."
+                )
+                values["source_note"] = "User-provided Plus Code pending Google Maps pin confirmation."
+            elif data["slug"] == "jampui-hills":
+                values["coordinates_verified"] = True
+                values["coordinate_source"] = "GPS Verified along Mizoram border in Kanchanpur sub-division"
+                values["verification_notes"] = (
+                    "Kanchanpur sub-division, North Tripura district along the Mizoram border (23.96677, 92.27516, Plus Code X78G+P3). "
+                    "Directions route directly to Jampui Hills scenic range."
+                )
+                values["source_note"] = "Official Tripura Tourism destination record for Jampui Hills, Kanchanpur sub-division, North Tripura."
+            else:
+                values["coordinates_verified"] = True
+                values["coordinate_source"] = "Field GPS Verified (High Precision)"
+                values["verification_notes"] = (
+                    "Official verification complete: coordinates, entrance fees, operating hours, and best seasons confirmed."
+                )
+                values["source_note"] = "Official Tripura Tourism & ASI verified directory record with high-precision GPS coordinates."
             values["is_verified"] = True
             values["verified_by"] = "Tripura Tourism & ASI State Survey"
             values["last_verified_at"] = date(2026, 10, 1)
-            values["verification_notes"] = (
-                "Official verification complete: coordinates, entrance fees, operating hours, and best seasons confirmed."
-            )
-            values["source_note"] = "Official Tripura Tourism & ASI verified directory record with high-precision GPS coordinates."
         else:
             values["gallery"] = []
             values["coordinates_verified"] = False
@@ -1923,6 +1990,10 @@ ROUTE_CONNECTIONS = [
     {"source": "ujjayanta-palace", "target": "sepahijala-wildlife-sanctuary", "distance_km": 25.4, "travel_time_minutes": 45.0, "estimated_cost": 360.0, "transport_mode": "road", "connection_type": "highway", "is_directed": False, "verification_status": "verified", "data_source": "NH-8 Highway Directorate"},
     {"source": "ujjayanta-palace", "target": "kamalasagar", "distance_km": 28.6, "travel_time_minutes": 50.0, "estimated_cost": 420.0, "transport_mode": "road", "connection_type": "major_road", "is_directed": False, "verification_status": "verified", "data_source": "Kasba Border Corridor Matrix"},
     # Sepahijala district network
+    {"source": "rudrasagar-lake", "target": "neermahal", "distance_km": 0.8, "travel_time_minutes": 5.0, "estimated_cost": 50.0, "transport_mode": "road", "connection_type": "major_road", "is_directed": False, "verification_status": "verified", "data_source": "Melaghar Ghat to Neermahal Boat/Road Survey"},
+    {"source": "rudrasagar-lake", "target": "sepahijala-wildlife-sanctuary", "distance_km": 25.8, "travel_time_minutes": 42.0, "estimated_cost": 370.0, "transport_mode": "road", "connection_type": "highway", "is_directed": False, "verification_status": "verified", "data_source": "Bishalgarh-Melaghar Highway Log"},
+    {"source": "rudrasagar-lake", "target": "kamalasagar", "distance_km": 31.8, "travel_time_minutes": 52.0, "estimated_cost": 440.0, "transport_mode": "road", "connection_type": "major_road", "is_directed": False, "verification_status": "estimated", "data_source": "Sepahijala District Road Inventory"},
+    {"source": "rudrasagar-lake", "target": "boxanagar", "distance_km": 15.6, "travel_time_minutes": 26.0, "estimated_cost": 230.0, "transport_mode": "road", "connection_type": "major_road", "is_directed": False, "verification_status": "verified", "data_source": "Melaghar-Sonamura Highway Log"},
     {"source": "sepahijala-wildlife-sanctuary", "target": "kamalasagar", "distance_km": 21.8, "travel_time_minutes": 38.0, "estimated_cost": 310.0, "transport_mode": "road", "connection_type": "major_road", "is_directed": False, "verification_status": "estimated", "data_source": "Bishalgarh-Kasba Link Table"},
     {"source": "sepahijala-wildlife-sanctuary", "target": "neermahal", "distance_km": 26.5, "travel_time_minutes": 45.0, "estimated_cost": 380.0, "transport_mode": "road", "connection_type": "highway", "is_directed": False, "verification_status": "verified", "data_source": "Bishalgarh-Melaghar Highway Log"},
     {"source": "neermahal", "target": "kamalasagar", "distance_km": 32.4, "travel_time_minutes": 54.0, "estimated_cost": 450.0, "transport_mode": "road", "connection_type": "major_road", "is_directed": False, "verification_status": "estimated", "data_source": "Sepahijala District Road Inventory"},

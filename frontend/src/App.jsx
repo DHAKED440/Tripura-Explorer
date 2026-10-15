@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import PageBanner from './components/PageBanner';
@@ -13,6 +13,21 @@ export default function App() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [places, setPlaces] = useState([]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/destinations', { signal: controller.signal })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Could not load destinations.');
+        setPlaces(data.places || []);
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') console.error('Could not load destinations:', error);
+      });
+    return () => controller.abort();
+  }, []);
 
   const handleCategorySelect = (categoryId) => {
     setActiveCategory(categoryId);
@@ -37,6 +52,7 @@ export default function App() {
               onSearch={handleSearch}
             />
             <PopularDestinations
+              places={places}
               activeCategory={activeCategory}
               searchTerm={searchTerm}
               district={selectedDistrict}
@@ -62,6 +78,7 @@ export default function App() {
               showFilters={true}
             />
             <PopularDestinations
+              places={places}
               activeCategory={activeCategory}
               searchTerm={searchTerm}
               district={selectedDistrict}
@@ -82,6 +99,7 @@ export default function App() {
               <ActionCards />
             </div>
             <PopularDestinations
+              places={places}
               activeCategory={activeCategory}
               searchTerm={searchTerm}
               district={selectedDistrict}
@@ -101,6 +119,7 @@ export default function App() {
               <ActionCards />
             </div>
             <PopularDestinations
+              places={places}
               activeCategory={activeCategory}
               searchTerm={searchTerm}
               district={selectedDistrict}
@@ -116,7 +135,7 @@ export default function App() {
               eyebrow="Local Experiences Directory"
               showFilters={false}
             />
-            <LocalExperiences />
+            <LocalExperiences places={places} />
           </>
         )}
       </main>

@@ -17,6 +17,10 @@ from app.models import Category, District, Place
 INTEREST_OPTIONS = ["Nature", "Heritage", "Lakes", "Hills", "Temples", "Wildlife", "Culture"]
 
 RELATED_RADIUS_KM = 40.0
+PLACE_SLUG_ALIASES = {
+    "gumati": "gumti-wildlife-sanctuary",
+    "gumati-wildlife-sanctuary": "gumti-wildlife-sanctuary",
+}
 
 
 def get_interest_options() -> list[str]:
@@ -69,6 +73,7 @@ def get_place_by_slug(slug: str, include_unpublished: bool = False) -> Place | N
     """Fetch a destination by slug, hiding unpublished records from the public."""
     if not slug:
         return None
+    slug = PLACE_SLUG_ALIASES.get(slug.strip().lower(), slug.strip().lower())
     query = Place.query.filter(Place.slug == slug)
     if not include_unpublished:
         query = query.filter(Place.is_published.is_(True))

@@ -68,7 +68,36 @@
     </aside>
 
     <div class="map-view-column">
-      <!-- Active Journey HUD -->
+      <!-- Route Preview Panel (shown before starting navigation) -->
+      <div id="route-preview-panel" class="route-preview-panel" style="display:none;" aria-live="polite">
+        <div class="route-preview-panel__header">
+          <div class="route-preview-panel__title">
+            {{ icon("navigation", 18) }}
+            <span id="route-preview-dest-name">Route Preview</span>
+          </div>
+          <button type="button" class="route-preview-panel__close" id="route-preview-close" title="Close preview" aria-label="Close route preview">&times;</button>
+        </div>
+        <div class="route-preview-panel__stats">
+          <div class="route-preview-stat">
+            <span class="route-preview-stat__label">Distance</span>
+            <span class="route-preview-stat__value" id="route-preview-distance">--</span>
+          </div>
+          <div class="route-preview-stat">
+            <span class="route-preview-stat__label">Est. Travel Time</span>
+            <span class="route-preview-stat__value" id="route-preview-time">--</span>
+          </div>
+        </div>
+        <div class="route-preview-panel__actions">
+          <button type="button" class="btn--start-nav" id="route-preview-start" aria-label="Start live navigation">
+            {{ icon("navigation", 18) }} Start Navigation
+          </button>
+          <a id="route-preview-gmaps" href="#" target="_blank" rel="noopener noreferrer" class="btn--gmaps-link" aria-label="Open in Google Maps">
+            {{ icon("external-link", 16) }} Google Maps
+          </a>
+        </div>
+      </div>
+
+      <!-- Legacy Journey HUD (kept for backward compat, hidden when nav is active) -->
       <div id="journey-hud" class="journey-hud" style="display:none;" aria-live="polite">
         <div class="journey-hud__inner">
           <div class="journey-hud__header">
@@ -113,6 +142,68 @@
 
       <div class="map-container-relative">
         <div id="map" role="application" aria-label="Interactive map of Tripura destinations"></div>
+
+        <!-- Navigation instruction overlay (shown during active navigation) -->
+        <div id="nav-hud" class="nav-hud" style="display:none;">
+          <div class="nav-instruction-bar" id="nav-instruction-bar">
+            <div class="nav-instruction-bar__icon" id="nav-maneuver-icon">
+              <svg viewBox="0 0 24 24"><polyline points="12 19 12 5"/><polyline points="5 12 12 5 19 12"/></svg>
+            </div>
+            <div class="nav-instruction-bar__text">
+              <div class="nav-instruction-bar__maneuver" id="nav-maneuver-text">Continue straight</div>
+              <div class="nav-instruction-bar__distance" id="nav-maneuver-distance">--</div>
+            </div>
+            <span class="gps-quality" id="nav-gps-quality"></span>
+          </div>
+        </div>
+
+        <!-- Navigation bottom bar (stats + controls during navigation) -->
+        <div id="nav-bottom-bar" class="nav-bottom-bar" style="display:none;">
+          <div class="nav-bottom-bar__stat">
+            <div class="nav-bottom-bar__stat-label">Remaining</div>
+            <div class="nav-bottom-bar__stat-value" id="nav-remaining-dist">--</div>
+          </div>
+          <div class="nav-bottom-bar__stat">
+            <div class="nav-bottom-bar__stat-label">ETA</div>
+            <div class="nav-bottom-bar__stat-value" id="nav-eta">--</div>
+          </div>
+          <div class="nav-bottom-bar__stat">
+            <div class="nav-bottom-bar__stat-label">Dest</div>
+            <div class="nav-bottom-bar__stat-value" id="nav-dest-name" style="font-size:0.85rem;">--</div>
+          </div>
+          <div class="nav-controls">
+            <button type="button" class="nav-ctrl-btn nav-ctrl-btn--recenter" id="nav-recenter-btn" title="Recenter on vehicle" aria-label="Recenter map">
+              {{ icon("crosshair", 14) }}
+            </button>
+            <button type="button" class="nav-ctrl-btn nav-ctrl-btn--pause" id="nav-pause-btn" title="Pause navigation" aria-label="Pause navigation">
+              {{ icon("pause", 14) }} Pause
+            </button>
+            <button type="button" class="nav-ctrl-btn nav-ctrl-btn--end" id="nav-end-btn" title="End navigation" aria-label="End navigation">
+              {{ icon("square", 14) }} End
+            </button>
+          </div>
+        </div>
+
+        <!-- Status indicator for rerouting/locating -->
+        <div id="nav-status-bar" class="nav-status-bar" style="display:none;">
+          <span class="spinner"></span>
+          <span id="nav-status-text">Acquiring GPS...</span>
+        </div>
+
+        <!-- Arrival overlay -->
+        <div id="nav-arrival-overlay" class="arrival-overlay" style="display:none;">
+          <div class="arrival-card">
+            <div class="arrival-card__icon">🎉</div>
+            <div class="arrival-card__title">You've Arrived!</div>
+            <div class="arrival-card__dest" id="nav-arrival-dest">--</div>
+            <div class="arrival-card__actions">
+              <button type="button" class="btn btn--primary btn--sm" id="nav-arrival-close">Done</button>
+              <button type="button" class="btn btn--journey btn--sm" id="nav-arrival-new">New Journey</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating bar -->
         <div class="map-floating-bar" id="map-floating-bar" style="display:none;">
           <button type="button" class="floating-map-btn" id="floating-recenter-btn" title="Recenter to Live GPS">
             {{ icon("crosshair", 16) }}

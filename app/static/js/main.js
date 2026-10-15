@@ -184,89 +184,120 @@
   /* --- live directions with device geolocation ---------------------------- */
   var userLocationCache = null;
 
+  function buildGoogleMapsUrl(destLat, destLng, originLat, originLng) {
+    if (typeof destLat !== "number" || typeof destLng !== "number" || isNaN(destLat) || isNaN(destLng) || !isFinite(destLat) || !isFinite(destLng)) {
+      return null;
+    }
+    if (typeof originLat !== "undefined" && originLat !== null && (typeof originLat !== "number" || isNaN(originLat) || !isFinite(originLat))) {
+      originLat = null;
+    }
+    if (typeof originLng !== "undefined" && originLng !== null && (typeof originLng !== "number" || isNaN(originLng) || !isFinite(originLng))) {
+      originLng = null;
+    }
+
+    if (destLat < 22.9 || destLat > 24.6 || destLng < 91.0 || destLng > 92.4) {
+      return null;
+    }
+
+    var url = "https://www.google.com/maps/dir/?api=1&destination=" + destLat.toFixed(7) + "," + destLng.toFixed(7);
+
+    if (originLat !== null && originLng !== null && typeof originLat === "number" && typeof originLng === "number") {
+      if (originLat >= -90 && originLat <= 90 && originLng >= -180 && originLng <= 180) {
+        url += "&origin=" + originLat.toFixed(5) + "," + originLng.toFixed(5);
+      }
+    }
+
+    url += "&travelmode=driving";
+    return url;
+  }
+
+  function setLiveLocationCache(lat, lng, accuracy) {
+    if (typeof lat === "number" && typeof lng === "number" && !isNaN(lat) && !isNaN(lng)) {
+      userLocationCache = {
+        coords: { latitude: lat, longitude: lng, accuracy: accuracy || 10 },
+        timestamp: Date.now()
+      };
+    }
+  }
+
+  function getLiveLocationCache() {
+    // Only return if fresh (< 25 seconds) to avoid stale vehicle positions
+    if (userLocationCache && (Date.now() - userLocationCache.timestamp < 25000)) {
+      return userLocationCache;
+    }
+    return null;
+  }
+
   function initLiveDirections() {
     document.addEventListener("click", function (event) {
+      var invalidButton = event.target.closest("[data-invalid-directions]");
+      if (invalidButton) {
+        event.preventDefault();
+        var invalidName = invalidButton.getAttribute("data-name") || "Destination";
+        var invalidLat = invalidButton.getAttribute("data-lat");
+        var invalidLng = invalidButton.getAttribute("data-lng");
+        showToast("Directions are unavailable because the coordinates for " + invalidName + " are outside Tripura or need verification.", "error");
+        console.error("[Directions Error] Invalid Tripura destination coordinates:", {
+          name: invalidName, latitude: invalidLat, longitude: invalidLng
+        });
+        return;
+      }
       var btn = event.target.closest("[data-live-directions]");
       if (!btn) return;
 
-      var lat = btn.getAttribute("data-lat");
-      var lng = btn.getAttribute("data-lng");
+      var placeId = btn.getAttribute("data-place-id") || null;
+      var latAttr = btn.getAttribute("data-lat");
+      var lngAttr = btn.getAttribute("data-lng");
       var name = btn.getAttribute("data-name") || "Destination";
       var fallbackUrl = btn.getAttribute("href") || "";
+      var customDest = btn.getAttribute("data-destination") || null;
 
-      var destination = "";
-      if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
-        destination = parseFloat(lat).toFixed(6) + "," + parseFloat(lng).toFixed(6);
-      } else if (name) {
-        destination = encodeURIComponent(name + ", Tripura, India");
-      }
+      var destLat = parseFloat(latAttr);
+      var destLng = parseFloat(lngAttr);
 
-      if (!destination && !fallbackUrl) return;
-
-      function openMaps(originCoords) {
-        var finalUrl = "https://www.google.com/maps/dir/?api=1";
-        if (originCoords) {
-          finalUrl += "&origin=" + encodeURIComponent(originCoords);
-        }
-        finalUrl += "&destination=" + (destination || "") + "&travelmode=driving";
-
-        var win = window.open(finalUrl, "_blank", "noopener,noreferrer");
-        if (!win || win.closed || typeof win.closed === "undefined") {
-          window.location.href = finalUrl;
-        }
-      }
-
-      // If we already have a recent live GPS reading (< 5 minutes old)
-      if (userLocationCache && (Date.now() - userLocationCache.timestamp < 300000)) {
+      // Validate destination coordinates strictly
+      if (isNaN(destLat) || isNaN(destLng) || !isFinite(destLat) || !isFinite(destLng) ||
+          destLat < 22.9 || destLat > 24.6 || destLng < 91.0 || destLng > 92.4 ||
+          (destLat === 0 && destLng === 0)) {
         event.preventDefault();
-        openMaps(userLocationCache.coords.latitude.toFixed(6) + "," + userLocationCache.coords.longitude.toFixed(6));
-        return;
-      }
-
-      if (!navigator.geolocation) {
-        event.preventDefault();
-        openMaps(null);
+        showToast("Directions are unavailable because the coordinates for " + name + " are outside Tripura or need verification.", "error");
+        console.error("[Directions Error] Invalid Tripura destination coordinates:", {
+          placeId: placeId,
+          name: name,
+          latAttr: latAttr,
+          lngAttr: lngAttr
+        });
         return;
       }
 
       event.preventDefault();
 
-      var originalPointer = btn.style.pointerEvents;
-      btn.style.pointerEvents = "none";
-      showToast("Acquiring your exact live GPS location...", "info");
+      var slug = btn.getAttribute("data-slug") || "";
+      var mapParams = new URLSearchParams();
+      if (placeId) mapParams.set("place_id", placeId);
+      if (slug) mapParams.set("slug", slug);
+      if (name) mapParams.set("name", name);
+      mapParams.set("lat", destLat.toFixed(5));
+      mapParams.set("lng", destLng.toFixed(5));
+      mapParams.set("destination", destLat.toFixed(5) + "," + destLng.toFixed(5));
+      mapParams.set("directions", "1");
 
-      var timer = window.setTimeout(function () {
-        btn.style.pointerEvents = originalPointer;
-        showToast("Opening directions with device GPS location...", "info");
-        openMaps(null);
-      }, 7000);
+      var targetMapUrl = "/map?" + mapParams.toString();
 
-      navigator.geolocation.getCurrentPosition(
-        function (pos) {
-          window.clearTimeout(timer);
-          btn.style.pointerEvents = originalPointer;
-          userLocationCache = {
-            coords: pos.coords,
-            timestamp: Date.now()
-          };
-          openMaps(pos.coords.latitude.toFixed(6) + "," + pos.coords.longitude.toFixed(6));
-        },
-        function (err) {
-          window.clearTimeout(timer);
-          btn.style.pointerEvents = originalPointer;
-          if (err.code === err.PERMISSION_DENIED) {
-            showToast("Location access denied. Launching maps with device GPS.", "info");
-          } else {
-            showToast("Opening directions using device GPS.", "info");
-          }
-          openMaps(null);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 7000,
-          maximumAge: 0
-        }
-      );
+      console.info("[Tripura Explorer Directions Navigation]", {
+        destinationId: placeId,
+        destinationSlug: slug,
+        destinationName: name,
+        destinationLatitude: destLat,
+        destinationLongitude: destLng,
+        targetMapUrl: targetMapUrl
+      });
+
+      if (window.location.pathname === "/map" && window.TripuraMap && typeof window.TripuraMap.selectDestination === "function") {
+        window.TripuraMap.selectDestination(placeId || slug, destLat, destLng, name, true);
+      } else {
+        window.location.href = targetMapUrl;
+      }
     });
   }
   initLiveDirections();
@@ -274,6 +305,9 @@
   window.TripuraExplore = {
     apiFetch: apiFetch,
     csrfToken: csrfToken,
-    showToast: showToast
+    showToast: showToast,
+    setLiveLocationCache: setLiveLocationCache,
+    getLiveLocationCache: getLiveLocationCache,
+    buildGoogleMapsUrl: buildGoogleMapsUrl
   };
 })();

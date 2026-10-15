@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Heart, MapPin, Star, ArrowRight } from 'lucide-react';
-import { popularDestinations, allDestinations } from '../data/destinations';
+import { toDestinationCard } from '../data/destinations';
 
-export default function PopularDestinations({ activeCategory, searchTerm, district }) {
+export default function PopularDestinations({ places = [], activeCategory, searchTerm, district }) {
   const [favorites, setFavorites] = useState({});
   const [showAll, setShowAll] = useState(false);
 
@@ -16,7 +16,8 @@ export default function PopularDestinations({ activeCategory, searchTerm, distri
   };
 
   const displayedDestinations = useMemo(() => {
-    let list = showAll || activeCategory || searchTerm || district ? allDestinations : popularDestinations;
+    let list = places.map(toDestinationCard);
+    if (!(showAll || activeCategory || searchTerm || district)) list = list.slice(0, 6);
 
     if (activeCategory) {
       list = list.filter((item) => item.categorySlug === activeCategory);
@@ -41,7 +42,7 @@ export default function PopularDestinations({ activeCategory, searchTerm, distri
     }
 
     return list;
-  }, [showAll, activeCategory, searchTerm, district]);
+  }, [places, showAll, activeCategory, searchTerm, district]);
 
   return (
     <section id="explore" className="px-3 sm:px-4 py-6">
@@ -64,7 +65,7 @@ export default function PopularDestinations({ activeCategory, searchTerm, distri
             onClick={() => setShowAll((prev) => !prev)}
             className="text-xs sm:text-sm font-semibold text-slate-500 hover:text-navy flex items-center gap-1 group transition-colors cursor-pointer"
           >
-            <span>{showAll ? 'Show Featured' : `View All (${allDestinations.length})`}</span>
+            <span>{showAll ? 'Show Featured' : `View All (${places.length})`}</span>
             <ArrowRight className={`w-4 h-4 transition-transform ${showAll ? '-rotate-90' : 'group-hover:translate-x-1'}`} />
           </button>
         </div>
@@ -80,8 +81,8 @@ export default function PopularDestinations({ activeCategory, searchTerm, distri
             >
               {/* Media Container with Heart Button */}
               <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
-                <img
-                  src={place.imageUrl}
+                  <img
+                  src={place.imageUrl || '/static/images/place-placeholder.svg'}
                   alt={place.alt}
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -124,7 +125,7 @@ export default function PopularDestinations({ activeCategory, searchTerm, distri
 
                   <div className="flex items-center gap-1 font-bold text-slate-800">
                     <Star className="w-3.5 h-3.5 fill-[#E8892B] text-[#E8892B]" />
-                    <span>{place.rating.toFixed(1)}</span>
+                    {typeof place.rating === 'number' && <span>{place.rating.toFixed(1)}</span>}
                   </div>
                 </div>
               </div>

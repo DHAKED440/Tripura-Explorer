@@ -51,7 +51,7 @@
       dayOptions +
       "</select>" +
       (place.directions_url
-        ? '<a class="btn btn--ghost btn--sm" href="' + escapeHtml(place.directions_url) + '" target="_blank" rel="noopener noreferrer" data-live-directions data-lat="' + (place.latitude != null ? place.latitude : '') + '" data-lng="' + (place.longitude != null ? place.longitude : '') + '" data-name="' + escapeHtml(place.name || '') + '">Directions</a>'
+        ? '<a class="btn btn--ghost btn--sm" href="/map?place_id=' + encodeURIComponent(place.id || '') + '&slug=' + encodeURIComponent(place.slug || '') + '&name=' + encodeURIComponent(place.name || '') + '&lat=' + (place.latitude != null ? Number(place.latitude).toFixed(5) : '') + '&lng=' + (place.longitude != null ? Number(place.longitude).toFixed(5) : '') + '&destination=' + (place.latitude != null && place.longitude != null ? Number(place.latitude).toFixed(5) + ',' + Number(place.longitude).toFixed(5) : '') + '&directions=1" data-live-directions data-place-id="' + (place.id || '') + '" data-slug="' + (place.slug || '') + '" data-lat="' + (place.latitude != null ? place.latitude : '') + '" data-lng="' + (place.longitude != null ? place.longitude : '') + '" data-name="' + escapeHtml(place.name || '') + '">Directions</a>'
         : "") +
       "</div></div></li>"
     );

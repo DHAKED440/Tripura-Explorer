@@ -55,10 +55,11 @@
                   {% if place.directions_url %}
                     <a class="btn btn--ghost btn--sm"
                        style="margin-top:8px"
-                       href="{{ place.directions_url }}"
-                       target="_blank"
-                       rel="noopener noreferrer"
+                       href="{{ url_for('map.map_page', place_id=place.id, slug=place.slug, name=place.name, lat='%.5f'|format(place.latitude), lng='%.5f'|format(place.longitude), destination='%.5f,%.5f'|format(place.latitude, place.longitude), directions=1) }}"
                        data-live-directions
+                       data-place-id="{{ place.id }}"
+                       data-slug="{{ place.slug }}"
+                       data-destination="{{ '%.5f,%.5f'|format(place.latitude, place.longitude) }}"
                        data-lat="{{ '%.5f'|format(place.latitude) if place.has_coordinates else '' }}"
                        data-lng="{{ '%.5f'|format(place.longitude) if place.has_coordinates else '' }}"
                        data-name="{{ place.name }}"

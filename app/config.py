@@ -87,6 +87,13 @@ class Config:
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 
     LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+    # Restricted server-side Google Places API (New) key. Never expose to browsers.
+    GOOGLE_MAPS_API_KEY = (
+        os.environ.get("GOOGLE_MAPS_API_KEY", "")
+        .strip()
+        .strip('"')
+        .strip("'")
+    )
 
 
 class DevelopmentConfig(Config):

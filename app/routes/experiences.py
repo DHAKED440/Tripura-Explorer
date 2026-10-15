@@ -6,18 +6,27 @@ treated as a confirmed booking.
 """
 from __future__ import annotations
 
-from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
+import json
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
+
+from flask import Blueprint, Response, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
 from email_validator import EmailNotValidError, validate_email
 from flask_login import current_user
-from sqlalchemy import or_
-
-from app.data.cultural_highlights import grouped_highlights
 from app.extensions import db
 from app.forms import InquiryForm
-from app.models import Business, District, Inquiry
-from app.models.business import BUSINESS_CATEGORIES
+from app.models import Business, Inquiry, Place
+from app.services.destination_service import get_place_by_slug
+from app.services.local_experience_search import CATEGORY_LABELS, PlacesSearchError, photo_resource_path, search_nearby
 
 bp = Blueprint("experiences", __name__)
+
+
+@bp.get("/api/health")
+def api_health():
+    """Report whether server-side Places credentials are configured, never the secret."""
+    return jsonify({"google_key_loaded": bool(current_app.config.get("GOOGLE_MAPS_API_KEY", "").strip())})
 
 
 def validate_inquiry_payload(payload: dict) -> tuple[dict, list[str]]:
@@ -54,51 +63,147 @@ def validate_inquiry_payload(payload: dict) -> tuple[dict, list[str]]:
 
 @bp.get("/experiences")
 def index():
-    """Directory of approved providers plus an editorial cultural overview."""
-    query = Business.query.filter(Business.approval_status == "approved")
-
-    q = (request.args.get("q") or "").strip()[:120]
-    category = (request.args.get("category") or "").strip()
-    district_value = (request.args.get("district") or "").strip()
-    errors: list[str] = []
-
-    if q:
-        pattern = f"%{q}%"
-        query = query.filter(
-            or_(
-                Business.name.ilike(pattern),
-                Business.short_description.ilike(pattern),
-                Business.locality.ilike(pattern),
-            )
-        )
-    if category:
-        if category not in BUSINESS_CATEGORIES:
-            errors.append(f"No provider category matches '{category}'.")
-            query = query.filter(Business.id.is_(None))
+    """Search real businesses around the selected coordinate-verified attraction."""
+    category = request.args.get("category", "All types")
+    slug = request.args.get("destination", "")
+    keyword = " ".join(request.args.get("keyword", "").split())[:100]
+    try:
+        radius_km = int(request.args.get("radius", "5"))
+    except ValueError:
+        radius_km = 5
+    if radius_km not in {5, 10, 25}:
+        radius_km = 5
+    if category not in CATEGORY_LABELS:
+        category = "All types"
+    destinations = (Place.query.filter(
+        Place.is_published.is_(True),
+        Place.latitude.between(22.9, 24.6), Place.longitude.between(91.0, 92.4)
+    ).order_by(Place.name.asc()).all())
+    destination = get_place_by_slug(slug) if slug else None
+    results, error, searched = [], None, request.args.get("search") == "1"
+    if searched:
+        if destination is None:
+            error = "Choose a destination with valid Tripura coordinates before searching."
+        elif not current_app.config.get("GOOGLE_MAPS_API_KEY"):
+            error = "The backend has no GOOGLE_MAPS_API_KEY. Add it to the project .env or deployment environment, then restart Flask."
         else:
-            query = query.filter(Business.category == category)
-    if district_value:
-        lowered = district_value.lower()
-        district = District.query.filter(
-            or_(District.slug == lowered, District.name.ilike(district_value))
-        ).first()
-        if district is None:
-            errors.append(f"No district matches '{district_value}'.")
-            query = query.filter(Business.id.is_(None))
-        else:
-            query = query.filter(Business.district_id == district.id)
-
-    providers = query.order_by(Business.name.asc()).all()
+            try:
+                results = search_nearby(current_app.config["GOOGLE_MAPS_API_KEY"], destination, category,
+                                        radius_km, keyword)
+            except PlacesSearchError as exc:
+                current_app.logger.exception("Local experience Places search failed")
+                error = exc.public_message
     return render_template(
-        "experiences.html",
-        providers=providers,
-        categories=BUSINESS_CATEGORIES,
-        districts=District.query.order_by(District.name.asc()).all(),
-        highlights=grouped_highlights(),
-        filters={"q": q, "category": category, "district": district_value},
-        errors=errors,
-        pending_count=Business.query.filter(Business.approval_status == "pending").count(),
+        "experiences.html", destinations=destinations, destination=destination,
+        category=category, keyword=keyword, radius_km=radius_km, results=results,
+        search_error=error, searched=searched, categories=CATEGORY_LABELS,
+        photo_endpoint=url_for("experiences.place_photo"),
     )
+
+
+@bp.get("/experiences/place-photo")
+def place_photo():
+    """Fetch a Places photo server-side so the provider key is not exposed."""
+    api_key = current_app.config.get("GOOGLE_MAPS_API_KEY")
+    resource = photo_resource_path(request.args.get("name", ""))
+    if not api_key or not resource:
+        abort(404)
+    upstream = Request(resource, headers={"User-Agent": "TripuraExplore/1.0", "X-Goog-Api-Key": api_key})
+    try:
+        with urlopen(upstream, timeout=8) as response:
+            photo_uri = json.loads(response.read()).get("photoUri", "")
+        parsed_photo = urlparse(photo_uri)
+        if parsed_photo.scheme != "https" or not (parsed_photo.hostname or "").endswith(".googleusercontent.com"):
+            abort(404)
+        with urlopen(Request(photo_uri, headers={"User-Agent": "TripuraExplore/1.0"}), timeout=8) as response:
+            content = response.read(8_000_000)
+            content_type = response.headers.get_content_type()
+    except (HTTPError, URLError, TimeoutError, OSError):
+        current_app.logger.info("Google Places photo unavailable")
+        abort(404)
+    except (ValueError, json.JSONDecodeError):
+        abort(404)
+    if not content_type.startswith("image/"):
+        abort(404)
+    return Response(content, content_type=content_type, headers={"Cache-Control": "no-store"})
+
+
+@bp.get("/api/local-experiences")
+def api_local_experiences():
+    """JSON endpoint used by the optional React frontend for nearby searches."""
+    destination = get_place_by_slug(request.args.get("destination", ""))
+    if not destination or not destination.map_ready or not destination.has_tripura_coordinates:
+        return jsonify({"error": "Choose a destination with valid Tripura coordinates."}), 400
+    if not current_app.config.get("GOOGLE_MAPS_API_KEY"):
+        return jsonify({"error": "The backend has no GOOGLE_MAPS_API_KEY. Add it to the project .env or deployment environment, then restart Flask."}), 503
+    category = request.args.get("category", "All types")
+    keyword = " ".join(request.args.get("keyword", "").split())[:100]
+    try:
+        radius = int(request.args.get("radius", "5"))
+    except ValueError:
+        radius = 5
+    if radius not in {5, 10, 25}:
+        return jsonify({"error": "Radius must be 5, 10 or 25 km."}), 400
+    try:
+        records = search_nearby(current_app.config["GOOGLE_MAPS_API_KEY"], destination, category, radius, keyword)
+    except ValueError:
+        return jsonify({"error": "Unknown experience category."}), 400
+    except PlacesSearchError as exc:
+        current_app.logger.exception("Local experience API search failed")
+        return jsonify({"error": exc.public_message, "provider_status": exc.provider_status}), 502
+    for record in records:
+        if record["photo"]:
+            record["photo"] = url_for("experiences.place_photo", name=record["photo"])
+    return jsonify({
+        "destination": {"id": destination.slug, "name": destination.name,
+                        "district": destination.district.name if destination.district else None,
+                        "latitude": destination.latitude, "longitude": destination.longitude},
+        "radius_km": radius, "results": records,
+        "attribution": "Google Places",
+    })
+
+
+@bp.get("/api/local-experiences/<place_id>")
+def api_local_experience_details(place_id: str):
+    """Retrieve expanded Place data only when the user opens a result."""
+    from app.services.local_experience_search import fetch_place_details
+
+    api_key = current_app.config.get("GOOGLE_MAPS_API_KEY")
+    if not api_key:
+        return jsonify({"error": "The backend has no GOOGLE_MAPS_API_KEY. Add it to the project .env or deployment environment, then restart Flask."}), 503
+    destination = get_place_by_slug(request.args.get("destination", ""))
+    if not destination or not destination.map_ready or not destination.has_tripura_coordinates:
+        return jsonify({"error": "The selected destination has no valid Tripura coordinates."}), 400
+    try:
+        details = fetch_place_details(api_key, place_id)
+    except ValueError:
+        return jsonify({"error": "Invalid business Place ID."}), 400
+    except PlacesSearchError as exc:
+        current_app.logger.exception("Local experience details request failed")
+        return jsonify({"error": exc.public_message, "provider_status": exc.provider_status}), 502
+    location = details.get("location") or {}
+    lat, lng = location.get("latitude"), location.get("longitude")
+    if not isinstance(lat, (int, float)) or not isinstance(lng, (int, float)):
+        return jsonify({"error": "Google Places did not provide a business location."}), 502
+    from app.services.local_experience_search import haversine_km
+    photos = []
+    for photo in details.get("photos", [])[:5]:
+        if photo.get("name"):
+            photos.append({"url": url_for("experiences.place_photo", name=photo["name"]),
+                           "attributions": photo.get("authorAttributions", [])})
+    return jsonify({
+        "id": details.get("id"), "name": (details.get("displayName") or {}).get("text"),
+        "address": details.get("formattedAddress"), "latitude": lat, "longitude": lng,
+        "distance_km": round(haversine_km(destination.latitude, destination.longitude, lat, lng), 1),
+        "category": (details.get("primaryTypeDisplayName") or {}).get("text"),
+        "types": details.get("types", []), "rating": details.get("rating"),
+        "review_count": details.get("userRatingCount"), "business_status": details.get("businessStatus"),
+        "open_now": (details.get("currentOpeningHours") or {}).get("openNow"),
+        "opening_hours": (details.get("regularOpeningHours") or {}).get("weekdayDescriptions"),
+        "phone": details.get("nationalPhoneNumber"), "website": details.get("websiteUri"),
+        "maps_url": details.get("googleMapsUri"), "price_level": details.get("priceLevel"),
+        "photos": photos,
+    })
 
 
 @bp.get("/experiences/<slug>")

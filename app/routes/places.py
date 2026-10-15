@@ -9,6 +9,7 @@ from app.extensions import db
 from app.forms import CorrectionForm
 from app.models import CorrectionReport, Favorite, Place
 from app.services.destination_service import (
+    base_query,
     get_place_by_slug,
     list_categories,
     list_districts,
@@ -54,6 +55,13 @@ def api_places():
             "places": [place.to_dict() for place in items],
         }
     )
+
+
+@bp.get("/api/destinations")
+def api_destinations():
+    """Complete public directory used by the React shell; the database is authoritative."""
+    places = base_query().order_by(Place.popularity.desc(), Place.name.asc()).all()
+    return jsonify({"places": [place.to_dict() for place in places]})
 
 
 @bp.get("/places/<slug>")
@@ -117,6 +125,8 @@ def report_problem(slug: str):
 def _travel_hints(place: Place) -> list[dict]:
     """Honest travel information: only show what the record actually contains."""
     hints = []
+    if place.address:
+        hints.append({"label": "Location & Address", "value": place.address})
     if place.best_season:
         hints.append({"label": "Best season", "value": place.best_season})
     if place.opening_info:

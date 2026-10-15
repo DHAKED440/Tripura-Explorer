@@ -149,16 +149,23 @@
         <div class="stack">
           {% if place.directions_url %}
             <a class="btn btn--primary btn--block"
-               href="{{ place.directions_url }}"
-               target="_blank"
-               rel="noopener noreferrer"
+               href="{{ url_for('map.map_page', place_id=place.id, slug=place.slug, name=place.name, lat='%.5f'|format(place.latitude), lng='%.5f'|format(place.longitude), destination='%.5f,%.5f'|format(place.latitude, place.longitude), directions=1) }}"
                data-live-directions
+               data-place-id="{{ place.id }}"
+               data-slug="{{ place.slug }}"
+               data-destination="{{ '%.5f,%.5f'|format(place.latitude, place.longitude) }}"
                data-lat="{{ '%.5f'|format(place.latitude) if place.has_coordinates else '' }}"
                data-lng="{{ '%.5f'|format(place.longitude) if place.has_coordinates else '' }}"
                data-name="{{ place.name }}"
                data-locality="{{ place.locality or '' }}">
               {{ icon("compass", 18) }} Get directions
             </a>
+          {% else %}
+            <button class="btn btn--secondary btn--block" type="button" data-invalid-directions
+                    data-place-id="{{ place.id }}" data-lat="{{ place.latitude if place.latitude is not none else '' }}"
+                    data-lng="{{ place.longitude if place.longitude is not none else '' }}" data-name="{{ place.name }}">
+              {{ icon("compass", 18) }} {{ "Directions unavailable: coordinates outside Tripura" if place.has_coordinates else "Coordinates pending verification" }}
+            </button>
           {% endif %}
 
           {% if current_user.is_authenticated %}
