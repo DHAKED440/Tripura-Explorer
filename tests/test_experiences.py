@@ -111,6 +111,30 @@ def test_experiences_page_offers_verified_destinations_and_no_seed_providers(cli
     assert b"Demo" not in body
 
 
+def test_local_experiences_search_omits_radius_and_posts_location_to_this_app(client):
+    page = client.get("/experiences").get_data(as_text=True)
+    assert 'name="radius"' not in page
+    assert "Search radius" not in page
+    assert 'method="post"' in page
+    assert "Use my location" in page
+
+    result = {"id": "ChIJ-live", "name": "Provider result", "category": "Restaurant",
+              "address": "Agartala", "distance_km": 1.2, "search_coverage_km": 10,
+              "photo": None, "photo_attributions": []}
+    with patch("app.routes.experiences.search_nearby", return_value=[result]) as search:
+        client.application.config["GOOGLE_MAPS_API_KEY"] = "test-server-key"
+        response = client.post("/experiences", data={
+            "csrf_token": "", "search": "1", "origin": "current", "latitude": "23.83",
+            "longitude": "91.28", "category": "Restaurant", "keyword": "",
+        })
+    assert response.status_code == 200
+    assert b"1.2 km straight-line" in response.data
+    assert "Current location" in response.get_data(as_text=True)
+    assert search.call_args.args[1].latitude == 23.83
+    assert search.call_args.args[1].longitude == 91.28
+    assert search.call_args.args[3] is None
+
+
 def test_search_requires_server_places_configuration(client):
     response = client.get("/experiences?search=1&destination=neermahal&category=Restaurant")
     assert response.status_code == 200
@@ -159,6 +183,28 @@ def test_search_radius_filters_and_sorts_google_places_records(app):
         "latitude": center.latitude, "longitude": center.longitude,
     }
     assert sent["locationRestriction"]["circle"]["radius"] == 5000
+
+
+def test_default_search_expands_provider_coverage_and_ranks_nearest(app):
+    from app.models import Place
+    center = Place.query.filter_by(slug="neermahal").first()
+
+    def provider_response(request):
+        body = json.loads(request.data)
+        radius = body["locationRestriction"]["circle"]["radius"]
+        count = 2 if radius == 10000 else 8
+        places = [{"id": f"near-{index}", "displayName": {"text": f"Listing {index}"},
+                   "location": {"latitude": center.latitude + index * 0.01, "longitude": center.longitude}}
+                  for index in range(count)]
+        return {"places": places}
+
+    with patch("app.services.local_experience_search._provider_request", side_effect=provider_response) as provider:
+        results = search_nearby("server-key", center, "Restaurant")
+    assert len(results) == 8
+    assert results[0]["distance_km"] <= results[-1]["distance_km"]
+    assert all(record["search_coverage_km"] == 25 for record in results)
+    assert [json.loads(call.args[0].data)["locationRestriction"]["circle"]["radius"]
+            for call in provider.call_args_list] == [10000, 25000]
 
 
 def test_keyword_restaurant_search_uses_text_search_and_does_not_assert_dietary_attributes(app):

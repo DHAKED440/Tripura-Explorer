@@ -1,52 +1,193 @@
 {% extends "base.html" %}
 {% from "partials/icons.html" import icon %}
 {% block title %}Local experiences — Tripura Explore{% endblock %}
-{% block description %}Find real restaurants, stays, guides and local services around Tripura destinations.{% endblock %}
+{% block description %}Find restaurants, stays, guides and local services near your location or a Tripura destination.{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/experiences.css') }}">
+{% endblock %}
+
 {% block content %}
-<section class="page-head"><div class="container"><p class="eyebrow">Local experiences</p><h1>Services around your destination</h1><p>Search real places and providers around a Tripura attraction. Distances are straight-line estimates; road distances can differ.</p></div></section>
-<section class="section section--tight"><div class="container">
-<form id="local-search" class="card" method="get" action="{{ url_for('experiences.index') }}" style="padding:var(--space-5);margin:0 0 var(--space-5)">
-<input type="hidden" name="search" value="1"><div class="form-row form-row--3">
-<div class="field"><label for="category">Type</label><select id="category" name="category">{% for name in categories %}<option value="{{ name }}" {{ 'selected' if category == name }}>{{ name }}</option>{% endfor %}</select></div>
-<div class="field"><label for="destination">Choose destination to travel to</label><select id="destination" name="destination" required><option value="">Choose a destination</option>{% for place in destinations %}<option value="{{ place.slug }}" {{ 'selected' if destination and destination.slug == place.slug }}>{{ place.name }} — {{ place.district.name if place.district else place.locality }}</option>{% endfor %}</select></div>
-<div class="field"><label for="radius">Search radius</label><select id="radius" name="radius">{% for radius in [5, 10, 25] %}<option value="{{ radius }}" {{ 'selected' if radius_km == radius }}>{{ radius }} km</option>{% endfor %}</select></div></div>
-<div class="field" style="margin-top:var(--space-3)"><label for="keyword">Optional keyword</label><input id="keyword" type="search" name="keyword" maxlength="100" value="{{ keyword }}" placeholder="e.g. Bengali food, vegetarian restaurant, budget homestay"></div>
-<div class="cluster" style="margin-top:var(--space-3)"><button id="search-button" class="btn btn--primary" type="submit">{{ icon('search', 18) }} Search nearby</button><a class="btn btn--ghost" href="{{ url_for('experiences.index') }}">Clear</a></div>
-</form>
-{% if search_error %}<div class="alert alert--warning"><span>{{ search_error }}</span>{% if destination %}<a class="btn btn--ghost btn--sm" href="{{ url_for('experiences.index', search=1, destination=destination.slug, category=category, radius=radius_km, keyword=keyword) }}">Retry</a>{% endif %}</div>
-{% elif results %}<div class="cluster" aria-label="Active search filters" style="margin-bottom:var(--space-3)"><span class="badge">{{ destination.name }}</span><span class="badge">{{ category }}</span><span class="badge">{{ radius_km }} km</span>{% if keyword %}<span class="badge">{{ keyword }}</span>{% endif %}</div><p class="text-muted">{{ results|length }} matching places within {{ radius_km }} km of <strong>{{ destination.name }}</strong>. Google Places data; see Google Maps for route distance.</p>
-<div class="grid grid--3">{% for item in results %}<article class="card"><div class="provider-card__media" style="display:grid;place-items:center;background:#f3f1ec;color:#42546a;min-height:180px">
-{% if item.photo %}<img src="{{ photo_endpoint }}?name={{ item.photo|urlencode }}" alt="Photo of {{ item.name }}" loading="lazy" onerror="this.remove()">{% else %}<span aria-hidden="true" style="font-size:2.5rem">{{ {'Restaurant':'🍽','Homestay':'⌂','Local Guide':'◎','Transport':'↗','Handicrafts':'◇','Cultural Experience':'✳'}.get(item.category, '⌖') }}</span>{% endif %}</div>
-{% if item.photo_attributions %}<p class="text-muted" style="font-size:.72rem;padding:4px 12px">{% for attribution in item.photo_attributions %}{% if attribution.uri %}<a href="{{ attribution.uri }}" target="_blank" rel="noopener noreferrer">{{ attribution.displayName }}</a>{% else %}{{ attribution.displayName }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
-<div class="card__body"><span class="badge">{{ item.category }}</span><h3 class="card__title">{{ item.name }}</h3><p class="card__desc">{{ item.address or 'Address not provided by the listing.' }}</p>
-<p class="text-muted" style="font-size:.84rem">{{ item.distance_km }} km straight-line distance{% if item.rating %} · {{ item.rating }} / 5{% if item.review_count %} ({{ item.review_count }} reviews){% endif %}{% endif %}</p>
-{% if item.open_now is not none %}<p class="text-muted" style="font-size:.84rem">{{ 'Open now' if item.open_now else 'Closed now' }}</p>{% elif item.business_status %}<p class="text-muted" style="font-size:.84rem">{{ item.business_status|replace('_',' ')|title }}</p>{% endif %}{% if item.opening_hours %}<details><summary>Opening hours</summary><ul>{% for hour in item.opening_hours %}<li>{{ hour }}</li>{% endfor %}</ul></details>{% endif %}
-<div class="cluster" style="margin-top:var(--space-3)"><button class="btn btn--ghost btn--sm" type="button" data-business-details="{{ item.id }}">Details</button><a class="btn btn--primary btn--sm" href="{{ item.directions }}" target="_blank" rel="noopener noreferrer" data-live-directions data-lat="{{ item.latitude }}" data-lng="{{ item.longitude }}" data-name="{{ item.name }}">Get Directions ↗</a>{% if item.phone %}<a class="btn btn--ghost btn--sm" href="tel:{{ item.phone }}">Call</a>{% endif %}{% if item.website %}<a class="btn btn--ghost btn--sm" href="{{ item.website }}" target="_blank" rel="noopener noreferrer">Website ↗</a>{% endif %}</div></div></article>{% endfor %}</div>
-<p class="text-muted" style="font-size:.8rem;margin-top:var(--space-3)">Place details and photos provided by Google. Ratings and opening information may change; confirm with the provider.</p>
-{% elif searched %}<div class="empty-state"><h3>No matching places found</h3><p>No results for {{ category }}{% if keyword %} matching “{{ keyword }}”{% endif %} within {{ radius_km }} km of {{ destination.name }}. Expand the radius or try another type.</p>{% if radius_km < 25 %}<a class="btn btn--primary" href="{{ url_for('experiences.index', search=1, destination=destination.slug, category=category, radius=10 if radius_km == 5 else 25, keyword=keyword) }}">Search a wider area</a>{% endif %}</div>
-{% else %}<div class="empty-state"><h3>Choose a destination and service type</h3><p>Searches run when you submit the filters. Results include real businesses returned by Google Places and are sorted by distance.</p></div>{% endif %}
-<p class="text-muted" style="font-size:.8rem;margin-top:var(--space-5)">Google Maps and Google Places data attribution: Google.</p>
-<dialog id="business-details" style="max-width:42rem;width:calc(100% - 2rem);border:0;border-radius:1rem;padding:1.5rem"><button id="business-details-close" class="btn btn--ghost btn--sm" type="button" style="float:right">Close</button><h2 id="business-details-title">Business details</h2><div id="business-details-content" aria-live="polite">Loading…</div></dialog>
-</div></section>
+<div class="experiences-page">
+  <div class="container experiences-container">
+    <section class="experiences-hero" aria-labelledby="experiences-title">
+      <div class="experiences-hero__copy">
+        <p class="experiences-kicker">{{ icon('pin', 15) }} Local experiences in Tripura</p>
+        <h1 id="experiences-title">Find good places<br>along your journey.</h1>
+        <p>Discover restaurants, stays, local guides and services near a destination or your current location.</p>
+      </div>
+      <div class="experiences-hero__photo" role="img" aria-label="Green hills in Tripura"></div>
+      <div class="experiences-hero__foot"><span>Tripura, India</span><span>Verified listing details from Google Places</span></div>
+    </section>
+
+    <section class="experience-search-panel" aria-label="Find local experiences">
+      <form id="local-search" method="post" action="{{ url_for('experiences.index') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="search" value="1">
+        <input type="hidden" name="origin" id="search-origin" value="{{ origin_mode }}">
+        <input type="hidden" name="latitude" id="search-latitude" value="{{ search_latitude }}">
+        <input type="hidden" name="longitude" id="search-longitude" value="{{ search_longitude }}">
+        <div class="experience-search-grid">
+          <div class="field">
+            <label for="category">Service type</label>
+            <select id="category" name="category">
+              {% for name in categories %}{% if name != 'Food' and (name != 'Homestay' or category == 'Homestay') %}<option value="{{ name }}" {{ 'selected' if category == name }}>{{ 'Restaurants & local food' if name == 'Restaurant' else name }}</option>{% endif %}{% endfor %}
+            </select>
+          </div>
+          <div class="field experience-origin-field">
+            <label for="destination">Choose destination to travel to or use current location</label>
+            <div class="experience-origin-controls">
+              <select id="destination" name="destination" {% if origin_mode != 'current' %}required{% endif %}>
+                <option value="">Choose a Tripura destination</option>
+                {% for place in destinations %}<option value="{{ place.slug }}" {{ 'selected' if destination and destination.slug == place.slug }}>{{ place.name }} — {{ place.district.name if place.district else place.locality }}</option>{% endfor %}
+              </select>
+              <button class="experience-location-button" id="geo-btn" type="button">{{ icon('crosshair', 16) }} <span>Use my location</span></button>
+            </div>
+            <span id="location-status" class="field-note" aria-live="polite">Choose a destination, or use your location for this search only.</span>
+          </div>
+          <div class="field">
+            <label for="keyword">Keyword <span class="optional-label">Optional</span></label>
+            <input id="keyword" type="search" name="keyword" maxlength="100" value="{{ keyword }}" placeholder="e.g. Bengali food, budget stay, local guide">
+          </div>
+        </div>
+        <div class="experience-search-actions">
+          <p class="origin-summary" id="origin-summary">{% if origin_mode == 'current' and origin %}Searching near your current location{% elif destination %}Searching near {{ destination.name }}{% else %}Search around a Tripura destination or your location{% endif %}</p>
+          <div class="experience-action-buttons">
+            <button id="search-button" class="experience-search-button" type="submit">{{ icon('search', 17) }} Search nearby</button>
+            <a class="experience-clear-button" href="{{ url_for('experiences.index') }}">Clear search</a>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    {% if search_error %}
+      <div class="experience-message experience-message--error" role="alert"><div><strong>We couldn’t complete that search.</strong><p>{{ search_error }}</p></div><button class="experience-secondary-button" type="submit" form="local-search">Retry search</button></div>
+    {% elif searched and results %}
+      <section class="experience-results" aria-labelledby="results-heading">
+        <div class="experience-results-heading">
+          <div><p class="experiences-kicker experiences-kicker--dark">{{ category }}</p><h2 id="results-heading">Places near {{ origin_name or (destination.name if destination else 'you') }}</h2><p>{{ results|length }} results returned · Nearest first · {{ results[0].get('search_coverage_km', 50) }} km provider search area</p></div>
+          <span class="provider-attribution">{{ icon('info', 14) }} Google Places · Search coverage is provider-limited</span>
+        </div>
+        <div class="experience-results-grid">
+          {% for item in results %}
+          <article class="experience-card">
+            <div class="experience-card__media">
+              {% if item.photo %}<img src="{{ photo_endpoint }}?name={{ item.photo|urlencode }}" alt="Photo of {{ item.name }}" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+              {% endif %}<div class="experience-card__placeholder" {% if item.photo %}hidden{% endif %}>{{ icon('pin', 26) }}<span>Photo unavailable</span></div>
+              {% if item.photo_attributions %}<span class="photo-attribution">Photo: {% for credit in item.photo_attributions %}{{ credit.displayName }}{% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}
+            </div>
+            <div class="experience-card__body">
+              <div class="experience-card__meta"><span class="experience-type">{{ item.primary_type_display_name or item.category }}</span>{% if item.rating %}<span class="experience-rating">★ {{ item.rating }}{% if item.review_count %}<small>({{ item.review_count }})</small>{% endif %}</span>{% endif %}</div>
+              <h3>{{ item.name }}</h3>
+              <p class="experience-address">{{ item.address or 'Address not provided by the listing.' }}</p>
+              <div class="experience-facts"><span>{{ icon('pin', 14) }} {{ item.distance_km }} km straight-line</span>
+                {% if item.price_level %}<span>Price level: {{ item.price_level|replace('_', ' ')|lower }}</span>{% endif %}
+                {% if item.open_now is not none %}<span class="{{ 'is-open' if item.open_now else 'is-closed' }}">{{ 'Open now' if item.open_now else 'Closed now' }}</span>{% elif item.business_status and item.business_status != 'OPERATIONAL' %}<span>{{ item.business_status|replace('_', ' ')|title }}</span>{% endif %}
+              </div>
+              {% if item.opening_hours %}<details class="experience-hours"><summary>View listed hours</summary><ul>{% for hour in item.opening_hours %}<li>{{ hour }}</li>{% endfor %}</ul></details>{% endif %}
+              <div class="experience-card__actions">
+                <button class="experience-secondary-button" type="button" data-business-details="{{ item.id }}" data-category="{{ item.category }}">View details</button>
+                <a class="experience-primary-button" href="{{ item.directions }}" target="_blank" rel="noopener noreferrer">Directions {{ icon('arrow-right', 15) }}</a>
+              </div>
+              <div class="experience-card__links">{% if item.phone %}<a href="tel:{{ item.phone }}">{{ icon('phone', 13) }} {{ item.phone }}</a>{% endif %}{% if item.website %}<a href="{{ item.website }}" target="_blank" rel="noopener noreferrer">Official website ↗</a>{% endif %}</div>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+        <p class="experience-coverage-note">Distances are straight-line estimates from {{ origin_name or (destination.name if destination else 'the search origin') }}, not driving distances. Google Places returns a limited number of results per provider query (up to 20 for a category); a wider search area does not guarantee complete regional coverage. Confirm current hours and details with the business.</p>
+      </section>
+    {% elif searched %}
+      <div class="experience-message"><div><strong>No places were returned for this search.</strong><p>The search expanded automatically up to the provider’s 50 km coverage limit. Google Places may have limited coverage for this service and area. Try another keyword or choose a nearby destination. No sample listings are shown.</p></div></div>
+    {% else %}
+      <div class="experience-empty"><span class="experience-empty__icon">{{ icon('compass', 22) }}</span><div><h2>Start with a place or your location</h2><p>Choose a service type and search origin. Results will be ranked by straight-line distance; driving routes can be longer.</p></div></div>
+    {% endif %}
+
+    <dialog id="business-details" class="experience-dialog" aria-labelledby="business-details-title">
+      <div class="experience-dialog__header"><div><p class="experiences-kicker experiences-kicker--dark" id="business-details-category">Listing details</p><h2 id="business-details-title">Business details</h2></div><button id="business-details-close" class="experience-close-button" type="button" aria-label="Close details">×</button></div>
+      <div id="business-details-content" class="experience-dialog__content" aria-live="polite">Loading listing details…</div>
+    </dialog>
+  </div>
+</div>
+
 <script>
-document.getElementById('local-search')?.addEventListener('submit',()=>{const b=document.getElementById('search-button');b.disabled=true;b.textContent='Searching…';});
-const detailDialog=document.getElementById('business-details');
-document.getElementById('business-details-close')?.addEventListener('click',()=>detailDialog.close());
-document.querySelectorAll('[data-business-details]').forEach(button=>button.addEventListener('click',async()=>{
- const content=document.getElementById('business-details-content'), title=document.getElementById('business-details-title');
- title.textContent='Business details'; content.textContent='Loading…'; detailDialog.showModal();
- try {
-  const response=await fetch(`/api/local-experiences/${encodeURIComponent(button.dataset.businessDetails)}?destination={{ destination.slug if destination else '' }}`), data=await response.json();
-  if(!response.ok) throw new Error(data.error||'Business details are unavailable.');
-  title.textContent=data.name||'Business details'; content.textContent='';
-  const add=(label,value)=>{if(!value)return;const row=document.createElement('p');row.textContent=`${label}: ${value}`;content.append(row);};
-  add('Category',data.category); add('Address',data.address); add('Distance from {{ destination.name if destination else "selected destination" }}',`${data.distance_km} km straight-line`);
-  add('Rating',data.rating?`${data.rating}/5${data.review_count?` (${data.review_count} reviews)`:''}:null); add('Status',data.business_status?.replaceAll('_',' ').toLowerCase()); add('Price level',data.price_level?.replaceAll('_',' ').toLowerCase()); add('Phone',data.phone);
-  (data.opening_hours||[]).forEach(hour=>add('Hours',hour));
-  if(data.website){const link=document.createElement('a');link.href=data.website;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Official website';content.append(link);}
-  if(data.maps_url){const link=document.createElement('a');link.href=data.maps_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='View on Google Maps';link.className='btn btn--ghost btn--sm';content.append(link);}
-  (data.photos||[]).forEach(photo=>{const img=document.createElement('img');img.src=photo.url;img.alt=`Photo of ${data.name}`;img.loading='lazy';img.style='max-width:100%;border-radius:8px;margin-top:8px';content.append(img);(photo.attributions||[]).forEach(author=>add('Photo credit',author.displayName));});
- } catch(error){content.textContent=error.message;}
-}));
+(() => {
+  const form = document.getElementById('local-search');
+  const origin = document.getElementById('search-origin');
+  const latitude = document.getElementById('search-latitude');
+  const longitude = document.getElementById('search-longitude');
+  const destination = document.getElementById('destination');
+  const status = document.getElementById('location-status');
+  const summary = document.getElementById('origin-summary');
+  const geoButton = document.getElementById('geo-btn');
+  let currentCoords = origin.value === 'current' && latitude.value && longitude.value;
+  const chooseDestination = () => {
+    origin.value = 'destination'; latitude.value = ''; longitude.value = ''; currentCoords = false;
+    destination.required = true;
+    summary.textContent = destination.selectedOptions[0]?.text || 'Search around a Tripura destination';
+  };
+  destination.addEventListener('change', chooseDestination);
+  geoButton.addEventListener('click', () => {
+    if (!navigator.geolocation) { status.textContent = 'Location is not available in this browser. Choose a destination instead.'; return; }
+    geoButton.disabled = true; status.textContent = 'Requesting your location…';
+    navigator.geolocation.getCurrentPosition(position => {
+      latitude.value = position.coords.latitude; longitude.value = position.coords.longitude;
+      origin.value = 'current'; currentCoords = true; destination.required = false; destination.value = '';
+      summary.textContent = 'Searching near your current location';
+      status.textContent = position.coords.accuracy > 1000 ? 'Approximate location ready. Shared only with Tripura Explore to search nearby.' : 'Location ready. Shared only with Tripura Explore to search nearby.';
+      geoButton.disabled = false;
+    }, error => {
+      origin.value = 'destination'; currentCoords = false;
+      const message = error.code === 1 ? 'Location permission was denied. Choose a destination to search instead.' : error.code === 3 ? 'Location request timed out. Try again or choose a destination.' : 'Your location could not be determined. Choose a destination to search instead.';
+      status.textContent = message; geoButton.disabled = false;
+    }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 });
+  });
+  form.addEventListener('submit', event => {
+    if (origin.value === 'current' && (!currentCoords || !latitude.value || !longitude.value)) {
+      event.preventDefault(); status.textContent = 'Use the Current location button again, or choose a destination.'; return;
+    }
+    if (origin.value !== 'current' && !destination.value) {
+      event.preventDefault(); status.textContent = 'Choose a destination or use your current location.'; destination.focus(); return;
+    }
+    const button = document.getElementById('search-button');
+    button.disabled = true; button.textContent = 'Searching…';
+  });
+  if (origin.value === 'current' && currentCoords) {
+    status.textContent = 'Current location is used for this search only.'; destination.required = false;
+  }
+
+  const dialog = document.getElementById('business-details');
+  const content = document.getElementById('business-details-content');
+  const safeText = (tag, value, cls) => { if (!value) return; const el = document.createElement(tag); el.textContent = value; if (cls) el.className = cls; content.append(el); };
+  document.getElementById('business-details-close').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
+  document.querySelectorAll('[data-business-details]').forEach(button => button.addEventListener('click', async () => {
+    content.textContent = 'Loading listing details…';
+    document.getElementById('business-details-title').textContent = 'Business details';
+    document.getElementById('business-details-category').textContent = button.dataset.category || 'Listing details';
+    dialog.showModal();
+    const params = new URLSearchParams({ destination: destination.value, origin: origin.value });
+    if (origin.value === 'current') { params.set('latitude', latitude.value); params.set('longitude', longitude.value); }
+    try {
+      const response = await fetch(`/api/local-experiences/${encodeURIComponent(button.dataset.businessDetails)}?${params}`);
+      const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Details are unavailable right now.');
+      document.getElementById('business-details-title').textContent = data.name || 'Business details'; content.replaceChildren();
+      safeText('p', data.category); safeText('p', data.address || 'Address not provided by this listing.');
+      safeText('p', `${data.distance_km} km straight-line distance`);
+      if (data.rating) safeText('p', `★ ${data.rating}/5${data.review_count ? ` · ${data.review_count} reviews` : ''}`);
+      safeText('p', data.business_status?.replaceAll('_', ' ').toLowerCase());
+      if (data.open_now !== null && data.open_now !== undefined) safeText('p', data.open_now ? 'Open now (Google Places)' : 'Closed now (Google Places)');
+      if (data.price_level) safeText('p', `Google price level: ${data.price_level.replaceAll('_', ' ').toLowerCase()} (not a menu price)`);
+      safeText('h3', 'Contact & practical information');
+      if (data.phone) { const phone = document.createElement('a'); phone.href = `tel:${data.phone}`; phone.textContent = data.phone; content.append(phone); }
+      if (data.website) { const site = document.createElement('a'); site.href = data.website; site.target = '_blank'; site.rel = 'noopener noreferrer'; site.textContent = 'Official website ↗'; content.append(site); }
+      if (data.maps_url) { const map = document.createElement('a'); map.href = data.maps_url; map.target = '_blank'; map.rel = 'noopener noreferrer'; map.textContent = 'Open location in Google Maps ↗'; content.append(map); }
+      (data.opening_hours || []).forEach(hour => safeText('p', hour, 'experience-hours-line'));
+      if (button.dataset.category === 'Restaurant' || button.dataset.category === 'Food') {
+        safeText('h3', 'Menu and dishes'); safeText('p', data.menu_message || 'Menu not available online from this listing.');
+      }
+      if (data.photos?.length) { const gallery = document.createElement('div'); gallery.className = 'experience-detail-gallery'; data.photos.forEach(photo => { const img = document.createElement('img'); img.src = photo.url; img.alt = `Photo of ${data.name}`; img.loading = 'lazy'; gallery.append(img); }); content.append(gallery); }
+      safeText('p', `Listing information supplied by ${data.data_source || 'Google Places'}. Hours, availability, and business details can change; verify with the business.`);
+    } catch (error) { content.replaceChildren(); safeText('p', error.message, 'experience-detail-error'); }
+  }));
+})();
 </script>
 {% endblock %}

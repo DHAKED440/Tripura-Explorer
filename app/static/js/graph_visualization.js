@@ -9,10 +9,10 @@ class AbstractGraphVisualizer {
     this.canvas = canvasElement;
     this.ctx = canvasElement.getContext('2d');
     this.options = Object.assign({
-      nodeRadius: 18,
-      repulsion: 4500,
-      springLength: 140,
-      springCoeff: 0.0008,
+      nodeRadius: 10,
+      repulsion: 1800,
+      springLength: 92,
+      springCoeff: 0.00065,
       damping: 0.88,
       onNodeClick: null,
       onNodeHover: null,
@@ -25,6 +25,7 @@ class AbstractGraphVisualizer {
 
     // Interactive & highlight state
     this.dragNode = null;
+    this.panPoint = null;
     this.hoverNode = null;
     this.activeHighlights = {
       pathNodeIds: new Set(),
@@ -85,13 +86,24 @@ class AbstractGraphVisualizer {
     const cx = this.width / 2;
     const cy = this.height / 2;
 
-    this.nodes = (nodesData || []).map((d) => {
-      let x = cx + (Math.random() - 0.5) * (this.width * 0.7);
-      let y = cy + (Math.random() - 0.5) * (this.height * 0.7);
-
-      if (d.latitude && d.longitude) {
-        x = cx + (d.longitude - 91.5) * (this.width * 1.5);
-        y = cy - (d.latitude - 23.6) * (this.height * 1.5);
+    const sourceNodes = nodesData || [];
+    const validCoords = sourceNodes.filter(d => Number.isFinite(Number(d.latitude)) && Number.isFinite(Number(d.longitude)));
+    const lats = validCoords.map(d => Number(d.latitude));
+    const lngs = validCoords.map(d => Number(d.longitude));
+    const minLat = Math.min(...lats, 23.5), maxLat = Math.max(...lats, 23.5);
+    const minLng = Math.min(...lngs, 91.5), maxLng = Math.max(...lngs, 91.5);
+    const inset = Math.max(this.options.nodeRadius + 18, 28);
+    this.nodes = sourceNodes.map((d, index) => {
+      // Stable geographic projection with a deterministic circular fallback.
+      const angle = -Math.PI / 2 + (index * 2.399963229728653);
+      const fallbackRadius = Math.min(this.width, this.height) * 0.36 * Math.sqrt((index + 0.5) / Math.max(1, sourceNodes.length));
+      let x = cx + Math.cos(angle) * fallbackRadius;
+      let y = cy + Math.sin(angle) * fallbackRadius;
+      if (Number.isFinite(Number(d.latitude)) && Number.isFinite(Number(d.longitude))) {
+        const spanLng = Math.max(maxLng - minLng, 0.01);
+        const spanLat = Math.max(maxLat - minLat, 0.01);
+        x = inset + ((Number(d.longitude) - minLng) / spanLng) * Math.max(1, this.width - inset * 2);
+        y = inset + ((maxLat - Number(d.latitude)) / spanLat) * Math.max(1, this.height - inset * 2);
       }
 
       const node = {
@@ -99,8 +111,8 @@ class AbstractGraphVisualizer {
         name: d.name,
         category: d.category,
         degree: d.degree || 0,
-        x: Math.max(40, Math.min(this.width - 40, x)),
-        y: Math.max(40, Math.min(this.height - 40, y)),
+        x: Math.max(inset, Math.min(this.width - inset, x)),
+        y: Math.max(inset, Math.min(this.height - inset, y)),
         vx: 0,
         vy: 0,
         raw: d,
@@ -118,6 +130,10 @@ class AbstractGraphVisualizer {
       travel_time_minutes: e.travel_time_minutes,
       raw: e,
     }));
+    this.initialPositions = new Map(this.nodes.map(n => [n.id, { x: n.x, y: n.y }]));
+
+    this.canvas.setAttribute('role', 'img');
+    this.canvas.setAttribute('aria-label', `Interactive road network graph with ${this.nodes.length} destinations and ${this.edges.length} corridors. Hover a node for its name; drag nodes to rearrange.`);
 
     this.startSimulation();
   }
@@ -136,6 +152,12 @@ class AbstractGraphVisualizer {
   }
 
   restartSimulation() {
+    if (this.initialPositions) {
+      this.nodes.forEach(n => {
+        const point = this.initialPositions.get(n.id);
+        if (point) { n.x = point.x; n.y = point.y; n.vx = 0; n.vy = 0; }
+      });
+    }
     this.startSimulation(120);
   }
 
@@ -154,7 +176,8 @@ class AbstractGraphVisualizer {
         const distSq = dx * dx + dy * dy + 1;
         const dist = Math.sqrt(distSq);
 
-        const force = repulsion / distSq;
+        const minDist = this.options.nodeRadius * 2 + 12;
+        const force = dist < minDist ? (minDist - dist) * 0.045 : repulsion / distSq;
         const fx = (dx / dist) * force;
         const fy = (dy / dist) * force;
 
@@ -345,15 +368,17 @@ class AbstractGraphVisualizer {
       const midY = (src.y + tgt.y) / 2;
 
       const highlighted = isPathEdge || isRelaxedEdge || isMSTEdge;
-      this.ctx.fillStyle = highlighted ? '#17365d' : '#f8fafc';
-      this.ctx.strokeStyle = highlighted ? '#e8892b' : '#94a3b8';
+      const showWeight = highlighted || e === this.hoverEdge || (this.edges.indexOf(e) % 5 === 0 && Math.hypot(tgt.x - src.x, tgt.y - src.y) > 86);
+      if (!showWeight) continue;
+      this.ctx.fillStyle = highlighted ? '#17365d' : '#ffffff';
+      this.ctx.strokeStyle = highlighted ? '#e8892b' : '#cbd5e1';
       this.ctx.lineWidth = 1;
       const text = `${typeof e.weight === 'number' ? (Number.isInteger(e.weight) ? e.weight : e.weight.toFixed(1)) : e.weight}`;
       this.ctx.font = '600 10px Inter, system-ui, sans-serif';
       const textWidth = this.ctx.measureText(text).width;
 
       this.ctx.beginPath();
-      this.ctx.roundRect(midX - textWidth / 2 - 4, midY - 7, textWidth + 8, 14, 4);
+      this.ctx.roundRect(midX - textWidth / 2 - 4, midY - 7, textWidth + 8, 14, 2);
       this.ctx.fill();
       this.ctx.stroke();
 
@@ -415,12 +440,40 @@ class AbstractGraphVisualizer {
       this.ctx.lineWidth = isHovered ? 3.5 : 2;
       this.ctx.stroke();
 
-      // Node Label
+    }
+
+    // Label the active nodes first, then place remaining labels only where they fit.
+    const featured = n => n === this.hoverNode || this.activeHighlights.pathNodeIds.has(n.id) || n.id === this.activeHighlights.startNodeId || n.id === this.activeHighlights.targetNodeId || n.id === this.activeHighlights.currentNodeId;
+    const labels = [...this.nodes].sort((a, b) => Number(featured(b)) - Number(featured(a)) || String(a.id).localeCompare(String(b.id)));
+    const occupied = [];
+    const intersects = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+    for (const n of labels) {
+      const important = featured(n);
+      if (!important && this.nodes.length > 12 && occupied.length > 10) continue;
+      this.ctx.font = important ? '600 10px Inter, sans-serif' : '500 9px Inter, sans-serif';
+      const label = String(n.name || '');
+      const width = Math.min(this.ctx.measureText(label).width, Math.max(52, this.width * 0.28));
+      const height = 13;
+      const candidates = [
+        { x: n.x, y: n.y + this.options.nodeRadius + 5, align: 'center' },
+        { x: n.x + this.options.nodeRadius + 5, y: n.y - height / 2, align: 'left' },
+        { x: n.x - this.options.nodeRadius - 5, y: n.y - height / 2, align: 'right' },
+        { x: n.x, y: n.y - this.options.nodeRadius - height - 4, align: 'center' },
+      ];
+      let chosen = null;
+      for (const c of candidates) {
+        const rect = { left: c.align === 'center' ? c.x - width / 2 : c.align === 'right' ? c.x - width : c.x, right: c.align === 'center' ? c.x + width / 2 : c.align === 'right' ? c.x : c.x + width, top: c.y, bottom: c.y + height };
+        const collidesNode = this.nodes.some(other => other !== n && Math.hypot(other.x - (rect.left + rect.right) / 2, other.y - (rect.top + rect.bottom) / 2) < this.options.nodeRadius + height / 2 + 3);
+        if (rect.left >= 2 && rect.right <= this.width - 2 && rect.top >= 2 && rect.bottom <= this.height - 2 && !collidesNode && !occupied.some(existing => intersects(rect, existing))) { chosen = { ...c, rect }; break; }
+      }
+      if (!chosen && important) chosen = { ...candidates[0], rect: { left: n.x - width / 2, right: n.x + width / 2, top: n.y + this.options.nodeRadius + 3, bottom: n.y + this.options.nodeRadius + 3 + height } };
+      if (!chosen) continue;
+      occupied.push(chosen.rect);
       this.ctx.fillStyle = '#0f172a';
-      this.ctx.font = (isHovered || isPath || isCurrent) ? '700 12px Inter, sans-serif' : '600 11px Inter, sans-serif';
-      this.ctx.textAlign = 'center';
+      this.ctx.font = important ? '600 10px Inter, sans-serif' : '500 9px Inter, sans-serif';
+      this.ctx.textAlign = chosen.align;
       this.ctx.textBaseline = 'top';
-      this.ctx.fillText(n.name, n.x, n.y + this.options.nodeRadius + 4);
+      this.ctx.fillText(label, chosen.x, chosen.y, Math.max(48, this.width * 0.28));
     }
   }
 
@@ -450,6 +503,8 @@ class AbstractGraphVisualizer {
       if (node) {
         this.dragNode = node;
         this.startSimulation(80);
+      } else {
+        this.panPoint = pos;
       }
     });
 
@@ -459,12 +514,20 @@ class AbstractGraphVisualizer {
         this.dragNode.x = pos.x;
         this.dragNode.y = pos.y;
         this.draw();
+      } else if (this.panPoint) {
+        const pos = getPos(e);
+        const dx = pos.x - this.panPoint.x;
+        const dy = pos.y - this.panPoint.y;
+        this.nodes.forEach(n => { n.x += dx; n.y += dy; });
+        this.panPoint = pos;
+        this.draw();
       } else {
         const pos = getPos(e);
         const node = findNodeAt(pos);
         if (node !== this.hoverNode) {
           this.hoverNode = node;
           this.canvas.style.cursor = node ? 'pointer' : 'grab';
+          this.canvas.title = node ? `${node.name}${node.category ? ` — ${node.category}` : ''}. Drag to rearrange; click to select.` : 'Interactive destination graph. Drag to rearrange; hover for destination details.';
           this.draw();
           if (this.options.onNodeHover) {
             this.options.onNodeHover(node);
@@ -477,7 +540,20 @@ class AbstractGraphVisualizer {
       if (this.dragNode) {
         this.dragNode = null;
       }
+      this.panPoint = null;
     });
+
+    this.canvas.addEventListener('wheel', (e) => {
+      if (!this.nodes.length) return;
+      e.preventDefault();
+      const pos = getPos(e);
+      const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
+      this.nodes.forEach(n => {
+        n.x = pos.x + (n.x - pos.x) * factor;
+        n.y = pos.y + (n.y - pos.y) * factor;
+      });
+      this.draw();
+    }, { passive: false });
 
     this.canvas.addEventListener('click', (e) => {
       const pos = getPos(e);

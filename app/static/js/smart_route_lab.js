@@ -1388,7 +1388,7 @@
     const ctx = canvas.getContext('2d');
     const container = canvas.parentElement;
     const width = (container ? container.clientWidth : 700) || 700;
-    const height = 320;
+    const height = Math.max(280, Math.min(360, container?.clientHeight || 320));
     const dpr = window.devicePixelRatio || 1;
 
     const targetW = Math.round(width * dpr);
@@ -1413,7 +1413,8 @@
       return;
     }
 
-    const padding = { top: 30, right: 40, bottom: 42, left: 65 };
+    const compact = width < 460;
+    const padding = { top: 24, right: compact ? 14 : 30, bottom: 42, left: compact ? 54 : 62 };
     const plotW = W - padding.left - padding.right;
     const plotH = H - padding.top - padding.bottom;
 
@@ -1491,7 +1492,9 @@
       ctx.setLineDash([]);
     }
 
-    // 3. Draw Points
+    // 3. Draw points; label only the selected route and frontier endpoints to avoid clutter.
+    const frontierSorted = routes.map((r, index) => ({ r, index })).filter(item => item.r.is_pareto_optimal).sort((a, b) => a.r.time_minutes - b.r.time_minutes);
+    const endpointIndexes = new Set(frontierSorted.length > 1 ? [frontierSorted[0].index, frontierSorted[frontierSorted.length - 1].index] : frontierSorted.map(item => item.index));
     routes.forEach((r, idx) => {
       const px = scaleX(r.time_minutes);
       const py = scaleY(r.cost_inr);
@@ -1522,12 +1525,15 @@
       ctx.fill();
       ctx.stroke();
 
-      // Tooltip / label
-      ctx.fillStyle = isPareto ? '#065f46' : '#64748b';
-      ctx.font = isSelected ? '700 11px Inter, sans-serif' : '600 10px Inter, sans-serif';
-      ctx.textAlign = 'left';
-      const labelText = r.profile.split(' ')[0] || 'Route';
-      ctx.fillText(labelText, px + 8, py - 4);
+      if (isSelected || endpointIndexes.has(idx)) {
+        ctx.fillStyle = isPareto ? '#17365d' : '#475569';
+        ctx.font = isSelected ? '700 10px Inter, sans-serif' : '600 9px Inter, sans-serif';
+        const labelText = r.profile.split(' ')[0] || `Route ${idx + 1}`;
+        const labelWidth = ctx.measureText(labelText).width;
+        const rightSide = px + 10 + labelWidth <= W - 4;
+        ctx.textAlign = rightSide ? 'left' : 'right';
+        ctx.fillText(labelText, rightSide ? px + 9 : px - 9, Math.max(padding.top + 10, py - 7));
+      }
     });
 
     // Store points for click hit-testing
@@ -1537,6 +1543,32 @@
       x: scaleX(r.time_minutes),
       y: scaleY(r.cost_inr),
     }));
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-label', `Pareto route comparison. Horizontal axis is travel time in minutes; vertical axis is road cost in rupees. ${routes.length} route candidates. Select a plotted point to inspect its route.`);
+    canvas.title = 'Pareto route chart. Point labels show selected and frontier endpoint routes. Use the comparison table below to inspect every candidate.';
+    if (!canvas._hasResizeObserver && typeof ResizeObserver !== 'undefined') {
+      canvas._hasResizeObserver = true;
+      let resizeTimer;
+      new ResizeObserver(() => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => drawParetoScatterCanvas(state.paretoRoutes), 80);
+      }).observe(container);
+    }
+    if (!canvas._hasTooltipListener) {
+      canvas.addEventListener('mousemove', (event) => {
+        const bounds = canvas.getBoundingClientRect();
+        const x = event.clientX - bounds.left;
+        const y = event.clientY - bounds.top;
+        const nearest = (canvas._routesWithCoords || []).reduce((best, item) => {
+          const distance = Math.hypot(item.x - x, item.y - y);
+          return distance < (best?.distance ?? 15) ? { item, distance } : best;
+        }, null);
+        canvas.title = nearest
+          ? `${nearest.item.route.profile}: ${nearest.item.route.time_minutes.toFixed(0)} minutes, ${nearest.item.route.distance_km.toFixed(1)} km, ₹${nearest.item.route.cost_inr.toFixed(0)}, scenic score ${nearest.item.route.scenic_score.toFixed(1)} out of 5${nearest.item.route.is_pareto_optimal ? ', Pareto frontier' : ', dominated'}. Click to inspect.`
+          : 'Pareto route chart. Point labels show selected and frontier endpoint routes. Use the comparison table below to inspect every candidate.';
+      });
+      canvas._hasTooltipListener = true;
+    }
 
     // Attach click listener once
     if (!canvas._hasClickListener) {

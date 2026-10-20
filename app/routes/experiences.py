@@ -7,6 +7,8 @@ treated as a confirmed booking.
 from __future__ import annotations
 
 import json
+import math
+from types import SimpleNamespace
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -61,40 +63,56 @@ def validate_inquiry_payload(payload: dict) -> tuple[dict, list[str]]:
     return cleaned, errors
 
 
-@bp.get("/experiences")
+@bp.route("/experiences", methods=["GET", "POST"])
 def index():
     """Search real businesses around the selected coordinate-verified attraction."""
-    category = request.args.get("category", "All types")
-    slug = request.args.get("destination", "")
-    keyword = " ".join(request.args.get("keyword", "").split())[:100]
+    params = request.values
+    category = params.get("category", "All types")
+    slug = params.get("destination", "")
+    keyword = " ".join(params.get("keyword", "").split())[:100]
+    origin_mode = params.get("origin", "destination")
     try:
-        radius_km = int(request.args.get("radius", "5"))
+        radius_km = int(params["radius"]) if params.get("radius") else None
     except ValueError:
-        radius_km = 5
-    if radius_km not in {5, 10, 25}:
-        radius_km = 5
+        radius_km = None
+    if radius_km not in {5, 10, 25, 50}:
+        radius_km = None
     if category not in CATEGORY_LABELS:
         category = "All types"
     destinations = (Place.query.filter(
-        Place.is_published.is_(True),
-        Place.latitude.between(22.9, 24.6), Place.longitude.between(91.0, 92.4)
+        Place.is_published.is_(True), Place.latitude.is_not(None), Place.longitude.is_not(None)
     ).order_by(Place.name.asc()).all())
     destination = get_place_by_slug(slug) if slug else None
-    results, error, searched = [], None, request.args.get("search") == "1"
+    origin = destination
+    origin_name = destination.name if destination else None
+    if origin_mode == "current":
+        try:
+            lat, lng = float(params.get("latitude", "")), float(params.get("longitude", ""))
+            if not (math.isfinite(lat) and math.isfinite(lng) and -90 <= lat <= 90 and -180 <= lng <= 180):
+                raise ValueError
+            origin = SimpleNamespace(latitude=lat, longitude=lng, name="Current location", district=None)
+            origin_name = "Current location"
+        except (ValueError, TypeError):
+            origin = None
+    results, error, searched = [], None, params.get("search") == "1"
     if searched:
-        if destination is None:
-            error = "Choose a destination with valid Tripura coordinates before searching."
+        if origin is None:
+            error = "Choose a Tripura destination or use the Current location button to share your location for this search."
+        elif not (getattr(origin, "latitude", None) is not None and getattr(origin, "longitude", None) is not None):
+            error = "Choose a destination with valid coordinates before searching."
         elif not current_app.config.get("GOOGLE_MAPS_API_KEY"):
             error = "The backend has no GOOGLE_MAPS_API_KEY. Add it to the project .env or deployment environment, then restart Flask."
         else:
             try:
-                results = search_nearby(current_app.config["GOOGLE_MAPS_API_KEY"], destination, category,
+                results = search_nearby(current_app.config["GOOGLE_MAPS_API_KEY"], origin, category,
                                         radius_km, keyword)
             except PlacesSearchError as exc:
                 current_app.logger.exception("Local experience Places search failed")
                 error = exc.public_message
     return render_template(
-        "experiences.html", destinations=destinations, destination=destination,
+        "experiences.html", destinations=destinations, destination=destination, origin=origin,
+        origin_name=origin_name, origin_mode=origin_mode,
+        search_latitude=params.get("latitude", ""), search_longitude=params.get("longitude", ""),
         category=category, keyword=keyword, radius_km=radius_km, results=results,
         search_error=error, searched=searched, categories=CATEGORY_LABELS,
         photo_endpoint=url_for("experiences.place_photo"),
@@ -132,18 +150,26 @@ def place_photo():
 def api_local_experiences():
     """JSON endpoint used by the optional React frontend for nearby searches."""
     destination = get_place_by_slug(request.args.get("destination", ""))
-    if not destination or not destination.map_ready or not destination.has_tripura_coordinates:
+    if request.args.get("origin", "destination") == "current":
+        try:
+            lat, lng = float(request.args.get("latitude", "")), float(request.args.get("longitude", ""))
+            if not (math.isfinite(lat) and math.isfinite(lng) and -90 <= lat <= 90 and -180 <= lng <= 180):
+                raise ValueError
+            destination = SimpleNamespace(latitude=lat, longitude=lng, name="Current location", district=None)
+        except (ValueError, TypeError):
+            return jsonify({"error": "Valid current-location coordinates are required."}), 400
+    elif not destination or not destination.map_ready or not destination.has_tripura_coordinates:
         return jsonify({"error": "Choose a destination with valid Tripura coordinates."}), 400
     if not current_app.config.get("GOOGLE_MAPS_API_KEY"):
         return jsonify({"error": "The backend has no GOOGLE_MAPS_API_KEY. Add it to the project .env or deployment environment, then restart Flask."}), 503
     category = request.args.get("category", "All types")
     keyword = " ".join(request.args.get("keyword", "").split())[:100]
     try:
-        radius = int(request.args.get("radius", "5"))
+        radius = int(request.args["radius"]) if request.args.get("radius") else None
     except ValueError:
-        radius = 5
-    if radius not in {5, 10, 25}:
-        return jsonify({"error": "Radius must be 5, 10 or 25 km."}), 400
+        radius = None
+    if radius not in {None, 5, 10, 25, 50}:
+        return jsonify({"error": "Radius must be 5, 10, 25 or 50 km."}), 400
     try:
         records = search_nearby(current_app.config["GOOGLE_MAPS_API_KEY"], destination, category, radius, keyword)
     except ValueError:
@@ -155,10 +181,10 @@ def api_local_experiences():
         if record["photo"]:
             record["photo"] = url_for("experiences.place_photo", name=record["photo"])
     return jsonify({
-        "destination": {"id": destination.slug, "name": destination.name,
+        "destination": {"id": getattr(destination, "slug", None), "name": destination.name,
                         "district": destination.district.name if destination.district else None,
                         "latitude": destination.latitude, "longitude": destination.longitude},
-        "radius_km": radius, "results": records,
+        "search_coverage_km": records[0].get("search_coverage_km") if records else (radius or 50), "results": records,
         "attribution": "Google Places",
     })
 
@@ -172,7 +198,15 @@ def api_local_experience_details(place_id: str):
     if not api_key:
         return jsonify({"error": "The backend has no GOOGLE_MAPS_API_KEY. Add it to the project .env or deployment environment, then restart Flask."}), 503
     destination = get_place_by_slug(request.args.get("destination", ""))
-    if not destination or not destination.map_ready or not destination.has_tripura_coordinates:
+    if request.args.get("origin") == "current":
+        try:
+            origin_lat, origin_lng = float(request.args.get("latitude", "")), float(request.args.get("longitude", ""))
+            if not (math.isfinite(origin_lat) and math.isfinite(origin_lng) and -90 <= origin_lat <= 90 and -180 <= origin_lng <= 180):
+                raise ValueError
+            destination = SimpleNamespace(latitude=origin_lat, longitude=origin_lng, name="Current location")
+        except (ValueError, TypeError):
+            return jsonify({"error": "Valid current-location coordinates are required."}), 400
+    elif not destination or not destination.map_ready or not destination.has_tripura_coordinates:
         return jsonify({"error": "The selected destination has no valid Tripura coordinates."}), 400
     try:
         details = fetch_place_details(api_key, place_id)
@@ -203,6 +237,9 @@ def api_local_experience_details(place_id: str):
         "phone": details.get("nationalPhoneNumber"), "website": details.get("websiteUri"),
         "maps_url": details.get("googleMapsUri"), "price_level": details.get("priceLevel"),
         "photos": photos,
+        "menu_available": False,
+        "menu_message": "Menu not available online from this listing. Contact the business or check its official website for current dishes and prices.",
+        "data_source": "Google Places",
     })
 
 

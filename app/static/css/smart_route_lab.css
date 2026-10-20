@@ -1012,3 +1012,88 @@
   gap: 8px;
   transition: opacity 0.3s ease;
 }
+
+/* Smart Route Lab analytics workspace refinements */
+.smart-lab-hero {
+  background: #142b48;
+  border-bottom: 3px solid #e8892b;
+  padding: 30px 0 26px;
+}
+.smart-lab-hero::before, .smart-lab-hero::after { display: none; }
+.smart-lab-hero__badge, .smart-lab-hero__stat-pill, .mode-toggle-group,
+.mode-toggle-btn, .metric-card, .lab-panel, .visualizer-wrapper,
+.moo-controls-card, .pareto-canvas-card, .pareto-canvas-container,
+.trace-card, .route-table-scroll, .day-plan-card, .formula-display-box,
+.validation-banner, .ai-prompt-box { border-radius: 4px; }
+.smart-lab-hero__badge { letter-spacing: .035em; }
+.smart-lab-hero__stat-pill { background: rgba(255,255,255,.06); }
+.metrics-deck { grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 12px; }
+.metric-card { padding: 15px 16px; box-shadow: none; border-top: 2px solid #d8e0e9; }
+.metric-card::before { display: none; }
+.metric-card__value { font-size: 1.65rem; }
+.lab-layout { grid-template-columns: minmax(310px, 365px) minmax(0, 1fr); gap: 18px; }
+.lab-panel, .visualizer-wrapper, .moo-controls-card, .pareto-canvas-card { box-shadow: 0 2px 8px rgba(15, 23, 42, .045); }
+.visualizer-toolbar { padding: 10px 12px; background: #f1f4f7; }
+.visualizer-toggle-btns { gap: 2px; border-radius: 4px; background: #e5eaf0; }
+.visualizer-view-btn { border-radius: 3px; padding: 7px 10px; }
+.visualizer-view-btn.is-active { box-shadow: 0 1px 3px rgba(15,23,42,.12); }
+.visualizer-stage { height: clamp(440px, 54vw, 620px); }
+.visualizer-stage.is-split { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 1px; background: #cbd5e1; }
+.visualizer-stage.is-split > #map-pane, .visualizer-stage.is-split > #graph-pane { min-width: 0; overflow: hidden; }
+#graph-pane { background: #f8fafc !important; }
+#graph-canvas { touch-action: none; }
+.live-stats-ribbon { background: #193451; }
+.step-callout { border-radius: 3px; }
+.step-callout__badge, .pareto-pill, .dominated-pill, .smart-lab-hero__badge { border-radius: 3px; }
+.pareto-canvas-container { height: 320px; background: #fbfcfd; }
+#pareto-scatter-canvas { height: 100% !important; }
+.route-table-scroll { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; border: 1px solid var(--color-border); }
+.route-table { width: 100%; min-width: 900px; table-layout: fixed; font-size: .82rem; }
+.route-table th, .route-table td { padding: 10px 11px; vertical-align: middle; overflow-wrap: anywhere; line-height: 1.4; }
+.route-table th { white-space: normal; }
+.route-table th:nth-child(1) { width: 17%; }
+.route-table th:nth-child(2) { width: 17%; }
+.route-table th:nth-child(3), .route-table th:nth-child(4), .route-table th:nth-child(5), .route-table th:nth-child(6) { width: 10%; }
+.route-table th:nth-child(7) { width: 16%; }
+.route-table th:nth-child(8) { width: 10%; }
+.route-table td .badge, .route-table td .pareto-pill, .route-table td .dominated-pill { display: inline-block; white-space: normal; }
+.route-table tr.is-selected td { background: #fff5e9; }
+.pareto-canvas-card { min-width: 0; }
+.moo-panel-layout { grid-template-columns: minmax(270px, 320px) minmax(0, 1fr); gap: 16px; }
+.weight-slider-val { border-radius: 3px; }
+.copy-latex-btn { border-radius: 3px; }
+.route-table-scroll:focus-visible, #graph-canvas:focus-visible, #pareto-scatter-canvas:focus-visible { outline: 3px solid #e8892b; outline-offset: 2px; }
+@media (max-width: 1100px) {
+  .lab-layout { grid-template-columns: minmax(280px, 330px) minmax(0, 1fr); gap: 14px; }
+  .visualizer-stage.is-split { grid-template-columns: 1fr 1fr; }
+  .moo-panel-layout { grid-template-columns: minmax(240px, 290px) minmax(0, 1fr); }
+}
+@media (max-width: 900px) {
+  .lab-layout, .moo-panel-layout { grid-template-columns: minmax(0, 1fr); }
+  .lab-panel { order: 0; }
+  .visualizer-wrapper { order: 1; }
+  .visualizer-stage { height: 520px; }
+  .visualizer-stage.is-split { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .smart-lab-hero__inner { align-items: flex-start; }
+  .smart-lab-hero__inner > div:first-child { min-width: 0 !important; }
+  .smart-lab-hero__title { font-size: 2rem; }
+  .smart-lab-hero__desc { font-size: .9rem; }
+  .mode-toggle-group { width: 100%; border-radius: 4px; }
+  .mode-toggle-btn { flex: 1; justify-content: center; padding: 8px 7px; font-size: .78rem; }
+  .metrics-deck { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .metric-card { padding: 12px; }
+  .metric-card__value { font-size: 1.4rem; }
+  .visualizer-toolbar { align-items: stretch; }
+  .visualizer-toggle-btns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .visualizer-view-btn { padding: 7px 4px; font-size: .72rem; }
+  .visualizer-toolbar > div:last-child { justify-content: space-between !important; flex-wrap: wrap; }
+  .visualizer-toolbar .speed-select { max-width: 180px; min-width: 0; }
+  .visualizer-stage { height: 440px; }
+  .visualizer-stage.is-split { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; height: 680px; }
+  .state-trace-deck { grid-template-columns: 1fr; }
+  .moo-panel-layout { grid-template-columns: minmax(0, 1fr); }
+  .pareto-canvas-card { padding: 14px; }
+  .pareto-canvas-container { height: 300px; }
+}

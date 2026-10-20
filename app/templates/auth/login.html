@@ -2,36 +2,70 @@
 {% from "partials/icons.html" import icon %}
 {% block title %}Sign in — Tripura Explore{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
 {% block content %}
-<section class="section">
-  <div class="container">
-    <div class="auth-card">
-      <p class="eyebrow">Account</p>
-      <h1 style="font-size:1.6rem">Sign in</h1>
-      <p class="text-muted">Sign in to save trips, keep favourites and share a read-only itinerary link.</p>
+<section class="auth-page">
+  <div class="auth-card auth-card--login">
+    <p class="auth-eyebrow">Traveler account</p>
+    <h1>Welcome Back</h1>
+    <p class="auth-intro">Sign in to access your saved trips, offline routes, and cultural expedition notes.</p>
 
-      <form class="form" method="post" novalidate>
-        {{ form.csrf_token }}
-        <div class="field">
+    <div class="auth-divider"><span>Sign in with email</span></div>
+
+    <form class="form auth-form" method="post" novalidate>
+      {{ form.csrf_token }}
+      <div class="field">
+        <div class="auth-label-row">
           <label for="{{ form.email.id }}">{{ form.email.label.text }}</label>
-          {{ form.email(autocomplete="email", required=True, type="email") }}
-          {% for error in form.email.errors %}<span class="error">{{ error }}</span>{% endfor %}
+          <span class="auth-field-note">Your account email</span>
         </div>
-        <div class="field">
+        <div class="auth-input-wrap">
+          {{ form.email(autocomplete="email", required=True, type="email", placeholder="you@example.com", **{"aria-label": "Email address"}) }}
+          <span class="auth-input-icon">{{ icon("mail", 18) }}</span>
+        </div>
+        {% for error in form.email.errors %}<span class="error">{{ error }}</span>{% endfor %}
+      </div>
+      <div class="field">
+        <div class="auth-label-row">
           <label for="{{ form.password.id }}">{{ form.password.label.text }}</label>
-          {{ form.password(autocomplete="current-password", required=True) }}
-          {% for error in form.password.errors %}<span class="error">{{ error }}</span>{% endfor %}
         </div>
-        <div class="field field--checkbox">
-          {{ form.remember() }}
-          <label for="{{ form.remember.id }}">{{ form.remember.label.text }}</label>
+        <div class="auth-input-wrap">
+          {{ form.password(autocomplete="current-password", required=True, placeholder="Enter your password") }}
+          <button class="auth-password-toggle" type="button" aria-label="Show password" aria-pressed="false" data-password-toggle>{{ icon("eye", 18) }}</button>
         </div>
-        <button class="btn btn--primary btn--block" type="submit">{{ icon("check", 18) }} {{ form.submit.label.text }}</button>
-      </form>
+        {% for error in form.password.errors %}<span class="error">{{ error }}</span>{% endfor %}
+      </div>
+      <div class="field field--checkbox auth-remember">
+        {{ form.remember() }}
+        <label for="{{ form.remember.id }}">Keep me signed in on this device</label>
+      </div>
+      <button class="btn btn--primary btn--block auth-submit" type="submit">{{ form.submit.label.text }} {{ icon("arrow-right", 17) }}</button>
+    </form>
 
-      <hr class="divider">
-      <p class="text-muted mb-0">No account yet? <a href="{{ url_for('auth.register') }}">Create one</a> — it only takes a name, email and password.</p>
+    <p class="auth-create">Don't have an account yet? <a href="{{ url_for('auth.register') }}">Create an account</a> — it only takes a minute.</p>
+
+    <aside class="auth-security">
+      <span class="auth-security-icon">{{ icon("shield", 19) }}</span>
+      <p><strong>Your account stays protected</strong><br>Passwords are stored as salted hashes. Your saved trips stay with your account.</p>
+    </aside>
+    <div class="auth-help">
+      <span>{{ icon("info", 13) }} Need sign-in assistance?</span>
+      <a href="{{ url_for('main.about') }}#contact">Contact Tripura Explore</a>
     </div>
   </div>
 </section>
+<script>
+  document.querySelectorAll('[data-password-toggle]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var input = button.closest('.auth-input-wrap').querySelector('input');
+      var reveal = input.type === 'password';
+      input.type = reveal ? 'text' : 'password';
+      button.setAttribute('aria-pressed', String(reveal));
+      button.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+    });
+  });
+</script>
 {% endblock %}

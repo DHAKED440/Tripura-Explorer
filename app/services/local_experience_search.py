@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import math
+from types import SimpleNamespace
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
@@ -12,24 +13,28 @@ PLACES_NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby"
 PLACE_DETAILS_URL = "https://places.googleapis.com/v1/places/{}"
 FIELD_MASK = ",".join((
     "places.id", "places.displayName", "places.formattedAddress", "places.location",
-    "places.primaryType", "places.types", "places.rating", "places.userRatingCount",
+    "places.primaryType", "places.primaryTypeDisplayName", "places.types", "places.rating", "places.userRatingCount",
     "places.businessStatus", "places.regularOpeningHours", "places.nationalPhoneNumber",
     "places.currentOpeningHours.openNow",
-    "places.websiteUri", "places.googleMapsUri", "places.photos",
+    "places.websiteUri", "places.googleMapsUri", "places.priceLevel", "places.photos",
     "places.photos.authorAttributions",
 ))
 CATEGORY_QUERIES = {
+    "Accommodation": "homestays hotels guest houses lodges accommodation",
     "Homestay": "homestays guest houses lodges accommodation",
     "Local Guide": "local tour guides tourism guide services",
-    "Restaurant": "restaurants cafes eateries",
+    "Restaurant": "restaurants cafes eateries local food street food stalls",
+    "Food": "restaurants cafes local food street food stalls",
     "Transport": "taxi services car rentals local transport tour operators",
     "Handicrafts": "handicraft shops bamboo cane crafts handloom artisan shops",
     "Cultural Experience": "cultural tours workshops traditional craft community tourism experiences",
 }
 CATEGORY_LABELS = {"All types": "All types", **{key: key for key in CATEGORY_QUERIES}}
 CATEGORY_TYPES = {
+    "Accommodation": ["bed_and_breakfast", "guest_house", "hotel", "lodging", "hostel", "inn", "cottage", "farmstay"],
     "Homestay": ["bed_and_breakfast", "guest_house", "hotel", "lodging", "hostel", "inn", "cottage", "farmstay"],
-    "Restaurant": ["restaurant", "cafe", "bakery", "meal_takeaway", "meal_delivery"],
+    "Restaurant": ["restaurant", "cafe", "bakery", "fast_food", "food_court", "meal_takeaway", "meal_delivery"],
+    "Food": ["restaurant", "cafe", "bakery", "fast_food", "food_court", "meal_takeaway", "meal_delivery"],
     "Transport": ["taxi_service", "taxi_stand", "car_rental", "chauffeur_service", "transportation_service"],
 }
 
@@ -90,8 +95,11 @@ def _place_record(place: dict, destination, category: str, radius_km: int) -> di
     photo = (place.get("photos") or [{}])[0]
     return {
         "id": place["id"], "name": (place.get("displayName") or {}).get("text", "").strip(),
-        "category": category, "address": place.get("formattedAddress"),
+        "category": category, "primary_type": place.get("primaryType"),
+        "primary_type_display_name": (place.get("primaryTypeDisplayName") or {}).get("text"),
+        "address": place.get("formattedAddress"),
         "latitude": lat, "longitude": lng, "distance_km": round(distance, 1),
+        "distance_type": "straight-line",
         "rating": place.get("rating"), "review_count": place.get("userRatingCount"),
         "business_status": place.get("businessStatus"),
         "opening_hours": place.get("regularOpeningHours", {}).get("weekdayDescriptions"),
@@ -107,41 +115,56 @@ def _place_record(place: dict, destination, category: str, radius_km: int) -> di
     }
 
 
-def search_nearby(api_key: str, destination, category: str, radius_km: int, keyword: str = "") -> list[dict]:
-    """Search Google Places within the selected circle; validate and sort by Haversine distance."""
+def search_nearby(api_key: str, destination, category: str, radius_km: int | None = None, keyword: str = "") -> list[dict]:
+    """Search with progressive provider-supported coverage and rank by straight-line distance.
+
+    A caller-supplied radius is retained for API compatibility. The Local Experiences
+    page omits it and expands 10 -> 25 -> 50 km until enough results are available.
+    """
     query = CATEGORY_QUERIES.get(category)
     if category == "All types":
-        queries = list(CATEGORY_QUERIES.items())
+        queries = [(name, terms) for name, terms in CATEGORY_QUERIES.items() if name not in {"Homestay", "Food"}]
     elif query:
         queries = [(category, query)]
     else:
         raise ValueError("Unknown experience category")
 
     keyword = " ".join(str(keyword or "").split())[:100]
+    radii = [radius_km] if radius_km is not None else [10, 25, 50]
     results: dict[str, dict] = {}
-    for result_category, terms in queries:
-        center = {"latitude": destination.latitude, "longitude": destination.longitude}
-        circle = {"circle": {"center": center, "radius": radius_km * 1000}}
-        use_nearby = not keyword and (result_category in CATEGORY_TYPES or result_category == "All types")
-        if use_nearby:
-            types = CATEGORY_TYPES.get(result_category) or sorted({t for values in CATEGORY_TYPES.values() for t in values})
-            body = {"includedTypes": types, "maxResultCount": 20, "rankPreference": "DISTANCE", "locationRestriction": circle}
-            endpoint = PLACES_NEARBY_URL
-        else:
-            search_terms = f"{terms} {keyword}".strip()
-            district = destination.district.name if destination.district else "Tripura"
-            body = {"textQuery": f"{search_terms} near {destination.name}, {district}, Tripura",
-                    "pageSize": 20, "rankPreference": "DISTANCE", "locationRestriction": circle}
-            endpoint = PLACES_SEARCH_URL
-        provider_request = Request(endpoint, data=json.dumps(body).encode(), method="POST", headers={
-            "Content-Type": "application/json", "X-Goog-Api-Key": api_key, "X-Goog-FieldMask": FIELD_MASK,
-        })
-        payload = _provider_request(provider_request)
-        for place in payload.get("places", []):
-            record = _place_record(place, destination, result_category, radius_km)
-            if record and record["name"]:
-                results.setdefault(record["id"], record)
-    return sorted(results.values(), key=lambda item: item["distance_km"])
+    covered_radius = radii[0]
+    for coverage in radii:
+        covered_radius = coverage
+        for result_category, terms in queries:
+            center = {"latitude": destination.latitude, "longitude": destination.longitude}
+            circle = {"circle": {"center": center, "radius": coverage * 1000}}
+            use_nearby = not keyword and (result_category in CATEGORY_TYPES or result_category == "All types")
+            if use_nearby:
+                types = CATEGORY_TYPES.get(result_category) or sorted({t for values in CATEGORY_TYPES.values() for t in values})
+                body = {"includedTypes": types, "maxResultCount": 20, "rankPreference": "DISTANCE", "locationRestriction": circle}
+                endpoint = PLACES_NEARBY_URL
+            else:
+                search_terms = f"{terms} {keyword}".strip()
+                district = destination.district.name if destination.district else "Tripura"
+                origin_name = getattr(destination, "name", "Current location")
+                district_name = destination.district.name if destination.district else "Tripura"
+                query = search_terms if origin_name == "Current location" else f"{search_terms} near {origin_name}, {district_name}"
+                body = {"textQuery": query, "pageSize": 20, "rankPreference": "DISTANCE", "locationBias": circle}
+                endpoint = PLACES_SEARCH_URL
+            provider_request = Request(endpoint, data=json.dumps(body).encode(), method="POST", headers={
+                "Content-Type": "application/json", "X-Goog-Api-Key": api_key, "X-Goog-FieldMask": FIELD_MASK,
+            })
+            payload = _provider_request(provider_request)
+            for place in payload.get("places", []):
+                record = _place_record(place, destination, result_category, coverage)
+                if record and record["name"]:
+                    results.setdefault(record["id"], record)
+        if radius_km is not None or len(results) >= 8:
+            break
+    ordered = sorted(results.values(), key=lambda item: item["distance_km"])
+    for record in ordered:
+        record["search_coverage_km"] = covered_radius
+    return ordered
 
 
 def fetch_place_details(api_key: str, place_id: str) -> dict:

@@ -369,7 +369,7 @@
           </div>
           <!-- Right Pane: Abstract Graph Canvas -->
           <div id="graph-pane" style="height:100%; position:relative; background:#f8fafc;">
-            <canvas id="graph-canvas"></canvas>
+            <canvas id="graph-canvas" tabindex="0" aria-label="Interactive road network graph"></canvas>
             <div style="position:absolute; bottom:12px; right:12px; background:rgba(255,255,255,0.85); padding:4px 8px; border-radius:4px; font-size:0.75rem; color:#64748b; pointer-events:none;">
               Drag nodes to rearrange
             </div>
@@ -663,7 +663,7 @@
         </div>
 
         <!-- Route Alternatives Comparison Table -->
-        <div style="overflow-x: auto;">
+        <div class="route-table-scroll" role="region" aria-label="Route alternatives comparison" tabindex="0">
           <table class="route-table" id="pareto-table">
             <thead>
               <tr>
