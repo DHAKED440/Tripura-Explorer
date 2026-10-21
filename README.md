@@ -25,9 +25,9 @@ directory, an administrator dashboard, an automated test suite and the eight pro
 | Trip planner: 1–3 days, interests, start point, optional budget/date, rule-based generation, day-wise result, notes and honest warnings | Working |
 | Saved trips: save, reopen, remove a stop, move a stop between days, drag to reorder, rename, change duration, delete, read-only share link | Working |
 | Authentication: register, sign in, sign out, profile, favourites, per-user ownership checks | Working |
-| Local experiences: approved-provider directory, filters, provider detail, inquiry form stored in the database | Working |
+| Local experiences: Nominatim destination search, Overpass nearby OSM discovery, map/list view and internal map directions | Working, public-service availability varies |
 | Admin dashboard: destinations CRUD + publish/unpublish + verification fields, categories, provider approval, inquiries, correction reports, users | Working |
-| Automated tests (pytest + Flask test client) | 111 passing |
+| Automated tests (pytest + Flask test client) | Passing |
 | Eight project reports and a data-verification checklist | Written in `docs/` |
 
 **Deliberately not implemented:** reviews and star ratings (they need moderation and real users), online
@@ -212,7 +212,23 @@ Copy `.env.example` to `.env` and fill in the values. Nothing secret is hard-cod
 | `COOKIE_SECURE` | Set to `true` behind HTTPS |
 | `SESSION_LIFETIME_MINUTES` | Session length (default 120) |
 | `MAP_TILE_URL`, `MAP_TILE_ATTRIBUTION`, `MAP_MAX_ZOOM` | Tile provider configuration |
+| `OSM_USER_AGENT`, `APPLICATION_URL`, `GEOCODER_URL`, `OVERPASS_URL` | Identify the app and configure compatible OSM data services; no Google API key is required |
+| `OSM_GEOCODER_TIMEOUT`, `OSM_OVERPASS_TIMEOUT` | Bound destination and nearby-search provider waits (defaults: 8 and 18 seconds) |
 | `PLACES_PER_PAGE`, `LOG_LEVEL`, `FLASK_CONFIG` | Development tuning |
+
+Local Experiences uses Nominatim for submitted place names and Overpass for nearby
+mapped features. Set a descriptive `OSM_USER_AGENT` with real maintainer contact
+information and `APPLICATION_URL` to the deployed site. The public Nominatim
+service does not permit client-side autocomplete, so the page offers the app's
+published Tripura locations plus an explicit place/address search on submit.
+Public OSM endpoints have no availability SLA, and OSM coverage in Tripura varies;
+the page reports outages and missing facts instead of substituting demo results.
+Restaurant results discovered by food searches are upserted by OSM element ID into the separate
+`osm_restaurants` table. This grows from searches people make; it is not a complete Tripura-wide
+restaurant inventory. Mapped cuisine, hours, contact details, service options, and image links appear
+when present in OSM tags. Public Nominatim and Overpass endpoints do not require API keys.
+Before production traffic grows, move to an appropriately provisioned or licensed
+geocoding/search provider and a tile service suitable for the expected usage.
 
 ---
 

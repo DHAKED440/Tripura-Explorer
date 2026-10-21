@@ -8,6 +8,7 @@ from app.models.category import Category
 from app.models.district import District
 from app.models.feedback import CorrectionReport
 from app.models.itinerary import Itinerary, ItineraryStop
+from app.models.osm_restaurant import OSMRestaurant
 from app.models.place import Place
 from app.models.route_connection import RouteConnection
 from app.models.saved_smart_route import SavedSmartRoute
@@ -22,6 +23,7 @@ __all__ = [
     "Inquiry",
     "Itinerary",
     "ItineraryStop",
+    "OSMRestaurant",
     "Place",
     "RouteConnection",
     "SavedSmartRoute",

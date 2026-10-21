@@ -238,17 +238,6 @@
     return hrs + " hr" + (rem > 0 ? " " + rem + " min" : "");
   }
 
-  function formatTravelTime(distKm) {
-    // Tripura highway & winding mountain road estimation (~1.35 road factor @ 38 km/h)
-    var roadDist = distKm * 1.35;
-    var totalMinutes = Math.round((roadDist / 38.0) * 60);
-    if (totalMinutes < 5) return "Under 5 mins";
-    if (totalMinutes < 60) return "~" + totalMinutes + " mins";
-    var hrs = Math.floor(totalMinutes / 60);
-    var mins = totalMinutes % 60;
-    return "~" + hrs + " hr " + (mins > 0 ? mins + " mins" : "");
-  }
-
   function bearing(lat1, lng1, lat2, lng2) {
     var dLng = ((lng2 - lng1) * Math.PI) / 180;
     var y = Math.sin(dLng) * Math.cos((lat2 * Math.PI) / 180);
@@ -1001,7 +990,7 @@
 
       // ETA
       if (navEta) {
-        navEta.textContent = formatDuration(nav.remainingDuration);
+        navEta.textContent = nav.remainingDuration == null ? "Unavailable" : formatDuration(nav.remainingDuration);
       }
 
       // Destination name
@@ -1249,16 +1238,14 @@
 
       var dist = calculateDistanceKm(userCoords.lat, userCoords.lng, place.lat, place.lng);
       var distMeters = dist * 1000;
-      var timeEst = formatTravelTime(dist);
 
-      // Store approximate values
-      nav.routeCoords = [[userCoords.lat, userCoords.lng], [place.lat, place.lng]];
+      // Keep this as a visual straight-line preview only. It is not a routable path.
+      nav.routeCoords = [];
       nav.routeDistance = distMeters;
-      // Estimate duration: dist * 1.35 road factor / 38 km/h
-      nav.routeDuration = (dist * 1.35 / 38) * 3600;
+      nav.routeDuration = null;
       nav.routeSteps = [];
       nav.remainingDistance = distMeters;
-      nav.remainingDuration = nav.routeDuration;
+      nav.remainingDuration = null;
 
       map.fitBounds(
         [[userCoords.lat, userCoords.lng], [place.lat, place.lng]],
@@ -1267,20 +1254,20 @@
 
       if (routePreviewDestName) routePreviewDestName.textContent = place.name + " (straight line)";
       if (routePreviewDistance) routePreviewDistance.textContent = dist.toFixed(1) + " km (approx)";
-      if (routePreviewTime) routePreviewTime.textContent = timeEst;
-      if (routePreviewStartBtn) routePreviewStartBtn.disabled = false;
+      if (routePreviewTime) routePreviewTime.textContent = "Unavailable — route service did not return a route";
+      if (routePreviewStartBtn) routePreviewStartBtn.disabled = true;
 
       if (routePreviewGmaps) {
         routePreviewGmaps.href = sharedDirectionsUrl(place, userCoords) || "#";
       }
 
-      updateLegacyHUD(place, distMeters, nav.routeDuration);
+      updateLegacyHUD(place, distMeters, null);
     }
 
     function updateLegacyHUD(place, distMeters, duration) {
       if (journeyStats) journeyStats.style.display = "grid";
       if (journeyDistVal) journeyDistVal.textContent = formatDistance(distMeters);
-      if (journeyTimeVal) journeyTimeVal.textContent = formatDuration(duration);
+      if (journeyTimeVal) journeyTimeVal.textContent = duration == null ? "Unavailable" : formatDuration(duration);
       if (journeyNavBtn && userCoords) {
         journeyNavBtn.href = sharedDirectionsUrl(place, userCoords) || "#";
       }

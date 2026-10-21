@@ -87,13 +87,14 @@ class Config:
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 
     LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
-    # Restricted server-side Google Places API (New) key. Never expose to browsers.
-    GOOGLE_MAPS_API_KEY = (
-        os.environ.get("GOOGLE_MAPS_API_KEY", "")
-        .strip()
-        .strip('"')
-        .strip("'")
-    )
+    # OpenStreetMap data services. Use a descriptive User-Agent and configure
+    # another compatible endpoint when operating at production scale.
+    OSM_USER_AGENT = os.environ.get("OSM_USER_AGENT", "TripuraExplorer/1.0")
+    APPLICATION_URL = os.environ.get("APPLICATION_URL", "")
+    GEOCODER_URL = os.environ.get("GEOCODER_URL", "https://nominatim.openstreetmap.org/search")
+    OVERPASS_URL = os.environ.get("OVERPASS_URL", "https://overpass-api.de/api/interpreter")
+    OSM_GEOCODER_TIMEOUT = min(20, max(1, env_int("OSM_GEOCODER_TIMEOUT", 8)))
+    OSM_OVERPASS_TIMEOUT = min(25, max(3, env_int("OSM_OVERPASS_TIMEOUT", 18)))
 
 
 class DevelopmentConfig(Config):

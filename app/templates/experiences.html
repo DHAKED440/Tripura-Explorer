@@ -1,192 +1,160 @@
 {% extends "base.html" %}
 {% from "partials/icons.html" import icon %}
 {% block title %}Local experiences — Tripura Explore{% endblock %}
-{% block description %}Find restaurants, stays, guides and local services near your location or a Tripura destination.{% endblock %}
+{% block description %}Find mapped restaurants, stays, attractions and local services near a Tripura destination.{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/experiences.css') }}">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style>
+.experience-map{height:480px;border-radius:14px;overflow:hidden;border:1px solid #dce4e1}.experience-map[hidden],.experience-list[hidden]{display:none}.experience-view-switch{display:flex;gap:8px;margin:16px 0}.experience-view-switch button[aria-pressed="true"]{background:#193b63;color:white}.experience-map-marker{width:28px;height:28px;border:2px solid white;border-radius:50%;box-shadow:0 2px 8px #182b3b66;background:#193b63;color:#fff;text-align:center;line-height:24px;font-size:14px}.experience-map-marker.accommodation{background:#7a4d9b}.experience-map-marker.food{background:#c96d28}.experience-map-marker.attraction{background:#22826b}.experience-map-marker.service{background:#41689a}.experience-card.is-selected{outline:3px solid #efaa42}.experience-card__actions a{display:inline-flex;align-items:center}.experience-osm-link{font-size:.82rem}.experience-coverage-note a{color:#183b62;text-decoration:underline}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="experiences-page">
-  <div class="container experiences-container">
-    <section class="experiences-hero" aria-labelledby="experiences-title">
-      <div class="experiences-hero__copy">
-        <p class="experiences-kicker">{{ icon('pin', 15) }} Local experiences in Tripura</p>
-        <h1 id="experiences-title">Find good places<br>along your journey.</h1>
-        <p>Discover restaurants, stays, local guides and services near a destination or your current location.</p>
+<div class="experiences-page"><div class="container experiences-container">
+  <section class="experiences-hero" aria-labelledby="experiences-title">
+    <div class="experiences-hero__copy"><p class="experiences-kicker">{{ icon('pin', 15) }} Local experiences in Tripura</p><h1 id="experiences-title">Find good places<br>along your journey.</h1><p>Discover mapped restaurants, stays, attractions and services near a destination or your current location.</p></div>
+    <div class="experiences-hero__photo" role="img" aria-label="Green hills in Tripura"></div>
+    <div class="experiences-hero__foot"><span>Tripura, India</span><span>OpenStreetMap data</span></div>
+  </section>
+
+  <section class="experience-search-panel" aria-label="Find local experiences">
+    <form id="local-search" method="post" action="{{ url_for('experiences.index') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="search" value="1">
+      <input type="hidden" name="origin" id="search-origin" value="{{ origin_mode }}"><input type="hidden" name="latitude" id="search-latitude" value="{{ search_latitude }}"><input type="hidden" name="longitude" id="search-longitude" value="{{ search_longitude }}">
+      <div class="experience-search-grid">
+        <div class="field"><label for="category">Place type</label><select id="category" name="category">{% for name in categories %}<option value="{{ 'All types' if name == 'All Places' else name }}" {{ 'selected' if category == name }}>{{ 'All types' if name == 'All Places' else name }}</option>{% endfor %}</select></div>
+        <div class="field experience-origin-field"><label for="destination">Destination in Tripura</label><div class="experience-origin-controls"><select id="destination" name="destination" {% if origin_mode != 'current' and destination_selection != '__custom__' %}required{% endif %}><option value="">Choose a Tripura destination</option>{% for place in destinations %}<option value="{{ place }}" {{ 'selected' if destination == place }}>{{ place }}</option>{% endfor %}<option value="__custom__" {{ 'selected' if destination_selection == '__custom__' }}>Search another Tripura place…</option></select><button class="experience-location-button" id="geo-btn" type="button">{{ icon('crosshair', 16) }} <span>Use my location</span></button></div><div id="custom-destination-field" class="experience-custom-destination" {% if destination_selection != '__custom__' %}hidden{% endif %}><label for="custom-destination">Enter a place name or address</label><input id="custom-destination" name="custom_destination" maxlength="200" value="{{ custom_destination }}" placeholder="e.g. Agartala Railway Station, Tripura, India" autocomplete="off" {% if destination_selection == '__custom__' and origin_mode != 'current' %}required{% endif %}></div><span id="location-status" class="field-note" aria-live="polite">Choose a listed destination, enter another place, or request your current location.</span></div>
+        <div class="field"><label for="radius">Search radius</label><select id="radius" name="radius">{% for km in [5, 10, 25, 50] %}<option value="{{ km }}" {{ 'selected' if (radius_km or 25) == km }}>{{ km }} km</option>{% endfor %}</select></div>
+        <div class="field"><label for="keyword">Keyword <span class="optional-label">Optional</span></label><input id="keyword" type="search" name="keyword" maxlength="100" value="{{ keyword }}" placeholder="e.g. Bengali food, budget stay"></div>
       </div>
-      <div class="experiences-hero__photo" role="img" aria-label="Green hills in Tripura"></div>
-      <div class="experiences-hero__foot"><span>Tripura, India</span><span>Verified listing details from Google Places</span></div>
-    </section>
+      <div class="experience-search-actions"><p class="origin-summary" id="origin-summary">{% if origin_mode == 'current' and origin %}Searching near your current location{% elif searched %}Searching near {{ origin_name }}{% else %}Dumboor Lake, Tripura · 25 km{% endif %}</p><div class="experience-action-buttons"><button id="search-button" class="experience-search-button" type="submit">{{ icon('search', 17) }} Search nearby</button><a class="experience-clear-button" href="{{ url_for('experiences.index') }}">Clear search</a></div></div>
+    </form>
+  </section>
 
-    <section class="experience-search-panel" aria-label="Find local experiences">
-      <form id="local-search" method="post" action="{{ url_for('experiences.index') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="search" value="1">
-        <input type="hidden" name="origin" id="search-origin" value="{{ origin_mode }}">
-        <input type="hidden" name="latitude" id="search-latitude" value="{{ search_latitude }}">
-        <input type="hidden" name="longitude" id="search-longitude" value="{{ search_longitude }}">
-        <div class="experience-search-grid">
-          <div class="field">
-            <label for="category">Service type</label>
-            <select id="category" name="category">
-              {% for name in categories %}{% if name != 'Food' and (name != 'Homestay' or category == 'Homestay') %}<option value="{{ name }}" {{ 'selected' if category == name }}>{{ 'Restaurants & local food' if name == 'Restaurant' else name }}</option>{% endif %}{% endfor %}
-            </select>
-          </div>
-          <div class="field experience-origin-field">
-            <label for="destination">Choose destination to travel to or use current location</label>
-            <div class="experience-origin-controls">
-              <select id="destination" name="destination" {% if origin_mode != 'current' %}required{% endif %}>
-                <option value="">Choose a Tripura destination</option>
-                {% for place in destinations %}<option value="{{ place.slug }}" {{ 'selected' if destination and destination.slug == place.slug }}>{{ place.name }} — {{ place.district.name if place.district else place.locality }}</option>{% endfor %}
-              </select>
-              <button class="experience-location-button" id="geo-btn" type="button">{{ icon('crosshair', 16) }} <span>Use my location</span></button>
-            </div>
-            <span id="location-status" class="field-note" aria-live="polite">Choose a destination, or use your location for this search only.</span>
-          </div>
-          <div class="field">
-            <label for="keyword">Keyword <span class="optional-label">Optional</span></label>
-            <input id="keyword" type="search" name="keyword" maxlength="100" value="{{ keyword }}" placeholder="e.g. Bengali food, budget stay, local guide">
-          </div>
+  {% if search_error %}<div class="experience-message experience-message--error" role="alert"><div><strong>{{ 'The search service needs a moment.' if search_error_retryable else 'We couldn’t find that destination.' }}</strong><p>{{ search_error }}</p></div>{% if search_error_retryable %}<button class="experience-secondary-button" type="submit" form="local-search">Retry search</button>{% endif %}</div>
+  {% elif searched and results %}
+  <section class="experience-results" aria-labelledby="results-heading">
+    <div class="experience-results-heading"><div><p class="experiences-kicker experiences-kicker--dark">{{ 'All types' if category == 'All Places' else category }}</p><h2 id="results-heading">{{ category if category != 'All Places' else 'Places' }} near {{ origin_name }}</h2><p>{% if results_limited %}Showing the first 200 results returned within {{ radius_km }} km{% else %}Showing {{ results|length }} mapped results within {{ radius_km }} km{% endif %} · Nearest first</p></div><span class="provider-attribution">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a></span></div>
+    <div class="experience-view-switch"><button type="button" class="experience-secondary-button" data-view="list" aria-pressed="true">List</button><button type="button" class="experience-secondary-button" data-view="map" aria-pressed="false">Map</button></div>
+    <div id="experience-map" class="experience-map" hidden role="application" aria-label="Map of nearby places"></div><p id="experience-map-status" class="field-note" role="status" hidden></p>
+    <div class="experience-results-grid experience-list" id="experience-list">{% for item in results %}
+      <article class="experience-card" data-osm-id="{{ item.osm_type }}-{{ item.osm_id }}" tabindex="0" aria-label="View details for {{ item.name }}">
+        <div class="experience-card__media">{% if item.photo %}<img src="{{ item.photo }}" alt="Photo of {{ item.name }}" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="experience-card__placeholder" hidden>{{ icon('pin', 26) }}<span>Photo unavailable</span></div>{% else %}<div class="experience-card__placeholder">{{ icon('pin', 26) }}<span>{{ item.category }}</span></div>{% endif %}</div>
+        <div class="experience-card__body"><div class="experience-card__meta"><span class="experience-type">{{ item.category }}</span></div><h3>{{ item.name }}</h3>
+          <p class="experience-address">{{ item.address or 'Address not provided in OpenStreetMap.' }}</p>
+          {% if item.description %}<p class="experience-description">{{ item.description }}</p>{% endif %}
+          <div class="experience-facts"><span>{{ icon('pin', 14) }} {{ item.distance_km }} km straight-line</span>{% if item.cuisine %}<span>Cuisine: {{ item.cuisine|replace(';', ', ') }}</span>{% endif %}{% if item.opening_hours %}<span>Hours: {{ item.opening_hours }}</span>{% endif %}{% if item.fee %}<span>Entry fee: {{ item.fee }}</span>{% endif %}{% if item.wheelchair %}<span>Wheelchair access: {{ item.wheelchair }}</span>{% endif %}{% if item.operator %}<span>Operator: {{ item.operator }}</span>{% endif %}{% if item.brand %}<span>Brand: {{ item.brand }}</span>{% endif %}{% if item.dine_in %}<span>Dine-in: {{ item.dine_in }}</span>{% endif %}{% if item.takeaway %}<span>Takeaway: {{ item.takeaway }}</span>{% endif %}{% if item.delivery %}<span>Delivery: {{ item.delivery }}</span>{% endif %}{% if item.rating is not none and item.review_count is not none %}<span>{{ item.rating }} rating · {{ item.review_count }} reviews</span>{% endif %}{% if item.price %}<span>Price: {{ item.price }}</span>{% endif %}</div>
+          <div class="experience-card__links">{% if item.phone %}<a href="tel:{{ item.phone }}">{{ icon('phone', 13) }} {{ item.phone }}</a>{% endif %}{% if item.website %}<a href="{{ item.website }}" target="_blank" rel="noopener noreferrer">Website ↗</a>{% endif %}{% if item.email %}<a href="mailto:{{ item.email }}">Email</a>{% endif %}</div>
+          <div class="experience-card__actions"><button class="experience-secondary-button" type="button" data-business-details data-name="{{ item.name }}" data-category="{{ item.category }}" data-address="{{ item.address or '' }}" data-distance="{{ item.distance_km }}" data-description="{{ item.description or '' }}" data-cuisine="{{ item.cuisine or '' }}" data-hours="{{ item.opening_hours or '' }}" data-fee="{{ item.fee or '' }}" data-wheelchair="{{ item.wheelchair or '' }}" data-dine-in="{{ item.dine_in or '' }}" data-takeaway="{{ item.takeaway or '' }}" data-delivery="{{ item.delivery or '' }}" data-operator="{{ item.operator or '' }}" data-brand="{{ item.brand or '' }}" data-email="{{ item.email or '' }}" data-photo="{{ item.photo or '' }}" data-phone="{{ item.phone or '' }}" data-website="{{ item.website or '' }}" data-tags='{{ item.raw_tags|tojson }}' data-lat="{{ item.latitude }}" data-lon="{{ item.longitude }}">View details</button><a class="experience-primary-button" href="{{ item.directions }}">Get directions {{ icon('arrow-right', 15) }}</a><a class="experience-secondary-button" href="{{ item.external_directions }}" target="_blank" rel="noopener noreferrer">Google Maps</a></div>
+          <a class="experience-osm-link" href="{{ item.osm_url }}" target="_blank" rel="noopener noreferrer">View this OSM feature ↗</a>
         </div>
-        <div class="experience-search-actions">
-          <p class="origin-summary" id="origin-summary">{% if origin_mode == 'current' and origin %}Searching near your current location{% elif destination %}Searching near {{ destination.name }}{% else %}Search around a Tripura destination or your location{% endif %}</p>
-          <div class="experience-action-buttons">
-            <button id="search-button" class="experience-search-button" type="submit">{{ icon('search', 17) }} Search nearby</button>
-            <a class="experience-clear-button" href="{{ url_for('experiences.index') }}">Clear search</a>
-          </div>
-        </div>
-      </form>
-    </section>
+      </article>
+    {% endfor %}</div>
+    <button id="experience-load-more" class="experience-secondary-button" type="button" hidden>Load more places</button>
+    {% if results_limited %}<p class="experience-coverage-note">The public provider response reached its 200-result limit. Reduce the radius or select a category to explore a narrower set.</p>{% endif %}
+    <p class="experience-coverage-note">Distances are straight-line estimates, not road distances. OpenStreetMap coverage varies, and details may be missing or outdated. This search does not provide ratings, prices, booking availability or verified business recommendations. <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">Map data © OpenStreetMap contributors</a>.</p>
+  </section>
+  {% elif searched %}<div class="experience-message"><div><strong>No mapped places found within {{ radius_km }} km.</strong><p>OpenStreetMap may have limited coverage near this destination. Try a larger radius or another category.</p></div></div>
+  {% else %}<div class="experience-empty"><span class="experience-empty__icon">{{ icon('compass', 22) }}</span><div><h2>Search near a Tripura destination</h2><p>Submit a place such as Dumboor Lake to find nearby mapped businesses and attractions. Search radius defaults to 25 km.</p></div></div>{% endif %}
 
-    {% if search_error %}
-      <div class="experience-message experience-message--error" role="alert"><div><strong>We couldn’t complete that search.</strong><p>{{ search_error }}</p></div><button class="experience-secondary-button" type="submit" form="local-search">Retry search</button></div>
-    {% elif searched and results %}
-      <section class="experience-results" aria-labelledby="results-heading">
-        <div class="experience-results-heading">
-          <div><p class="experiences-kicker experiences-kicker--dark">{{ category }}</p><h2 id="results-heading">Places near {{ origin_name or (destination.name if destination else 'you') }}</h2><p>{{ results|length }} results returned · Nearest first · {{ results[0].get('search_coverage_km', 50) }} km provider search area</p></div>
-          <span class="provider-attribution">{{ icon('info', 14) }} Google Places · Search coverage is provider-limited</span>
-        </div>
-        <div class="experience-results-grid">
-          {% for item in results %}
-          <article class="experience-card">
-            <div class="experience-card__media">
-              {% if item.photo %}<img src="{{ photo_endpoint }}?name={{ item.photo|urlencode }}" alt="Photo of {{ item.name }}" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
-              {% endif %}<div class="experience-card__placeholder" {% if item.photo %}hidden{% endif %}>{{ icon('pin', 26) }}<span>Photo unavailable</span></div>
-              {% if item.photo_attributions %}<span class="photo-attribution">Photo: {% for credit in item.photo_attributions %}{{ credit.displayName }}{% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}
-            </div>
-            <div class="experience-card__body">
-              <div class="experience-card__meta"><span class="experience-type">{{ item.primary_type_display_name or item.category }}</span>{% if item.rating %}<span class="experience-rating">★ {{ item.rating }}{% if item.review_count %}<small>({{ item.review_count }})</small>{% endif %}</span>{% endif %}</div>
-              <h3>{{ item.name }}</h3>
-              <p class="experience-address">{{ item.address or 'Address not provided by the listing.' }}</p>
-              <div class="experience-facts"><span>{{ icon('pin', 14) }} {{ item.distance_km }} km straight-line</span>
-                {% if item.price_level %}<span>Price level: {{ item.price_level|replace('_', ' ')|lower }}</span>{% endif %}
-                {% if item.open_now is not none %}<span class="{{ 'is-open' if item.open_now else 'is-closed' }}">{{ 'Open now' if item.open_now else 'Closed now' }}</span>{% elif item.business_status and item.business_status != 'OPERATIONAL' %}<span>{{ item.business_status|replace('_', ' ')|title }}</span>{% endif %}
-              </div>
-              {% if item.opening_hours %}<details class="experience-hours"><summary>View listed hours</summary><ul>{% for hour in item.opening_hours %}<li>{{ hour }}</li>{% endfor %}</ul></details>{% endif %}
-              <div class="experience-card__actions">
-                <button class="experience-secondary-button" type="button" data-business-details="{{ item.id }}" data-category="{{ item.category }}">View details</button>
-                <a class="experience-primary-button" href="{{ item.directions }}" target="_blank" rel="noopener noreferrer">Directions {{ icon('arrow-right', 15) }}</a>
-              </div>
-              <div class="experience-card__links">{% if item.phone %}<a href="tel:{{ item.phone }}">{{ icon('phone', 13) }} {{ item.phone }}</a>{% endif %}{% if item.website %}<a href="{{ item.website }}" target="_blank" rel="noopener noreferrer">Official website ↗</a>{% endif %}</div>
-            </div>
-          </article>
-          {% endfor %}
-        </div>
-        <p class="experience-coverage-note">Distances are straight-line estimates from {{ origin_name or (destination.name if destination else 'the search origin') }}, not driving distances. Google Places returns a limited number of results per provider query (up to 20 for a category); a wider search area does not guarantee complete regional coverage. Confirm current hours and details with the business.</p>
-      </section>
-    {% elif searched %}
-      <div class="experience-message"><div><strong>No places were returned for this search.</strong><p>The search expanded automatically up to the provider’s 50 km coverage limit. Google Places may have limited coverage for this service and area. Try another keyword or choose a nearby destination. No sample listings are shown.</p></div></div>
-    {% else %}
-      <div class="experience-empty"><span class="experience-empty__icon">{{ icon('compass', 22) }}</span><div><h2>Start with a place or your location</h2><p>Choose a service type and search origin. Results will be ranked by straight-line distance; driving routes can be longer.</p></div></div>
-    {% endif %}
+  <dialog id="business-details" class="experience-dialog" aria-labelledby="business-details-title"><div class="experience-dialog__header"><div><p class="experiences-kicker experiences-kicker--dark" id="business-details-category">OpenStreetMap listing</p><h2 id="business-details-title">Place details</h2></div><button id="business-details-close" class="experience-close-button" type="button" aria-label="Close details">×</button></div><div id="business-details-content" class="experience-dialog__content"></div></dialog>
+</div></div>
+{% endblock %}
 
-    <dialog id="business-details" class="experience-dialog" aria-labelledby="business-details-title">
-      <div class="experience-dialog__header"><div><p class="experiences-kicker experiences-kicker--dark" id="business-details-category">Listing details</p><h2 id="business-details-title">Business details</h2></div><button id="business-details-close" class="experience-close-button" type="button" aria-label="Close details">×</button></div>
-      <div id="business-details-content" class="experience-dialog__content" aria-live="polite">Loading listing details…</div>
-    </dialog>
-  </div>
-</div>
-
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script>
 (() => {
-  const form = document.getElementById('local-search');
-  const origin = document.getElementById('search-origin');
-  const latitude = document.getElementById('search-latitude');
-  const longitude = document.getElementById('search-longitude');
-  const destination = document.getElementById('destination');
-  const status = document.getElementById('location-status');
-  const summary = document.getElementById('origin-summary');
-  const geoButton = document.getElementById('geo-btn');
+  const form = document.getElementById('local-search'), origin = document.getElementById('search-origin');
+  const latitude = document.getElementById('search-latitude'), longitude = document.getElementById('search-longitude');
+  const destination = document.getElementById('destination'), customDestination = document.getElementById('custom-destination');
+  const customDestinationField = document.getElementById('custom-destination-field'), status = document.getElementById('location-status');
+  const summary = document.getElementById('origin-summary'), geoButton = document.getElementById('geo-btn');
   let currentCoords = origin.value === 'current' && latitude.value && longitude.value;
-  const chooseDestination = () => {
-    origin.value = 'destination'; latitude.value = ''; longitude.value = ''; currentCoords = false;
-    destination.required = true;
-    summary.textContent = destination.selectedOptions[0]?.text || 'Search around a Tripura destination';
-  };
-  destination.addEventListener('change', chooseDestination);
-  geoButton.addEventListener('click', () => {
-    if (!navigator.geolocation) { status.textContent = 'Location is not available in this browser. Choose a destination instead.'; return; }
-    geoButton.disabled = true; status.textContent = 'Requesting your location…';
-    navigator.geolocation.getCurrentPosition(position => {
-      latitude.value = position.coords.latitude; longitude.value = position.coords.longitude;
-      origin.value = 'current'; currentCoords = true; destination.required = false; destination.value = '';
-      summary.textContent = 'Searching near your current location';
-      status.textContent = position.coords.accuracy > 1000 ? 'Approximate location ready. Shared only with Tripura Explore to search nearby.' : 'Location ready. Shared only with Tripura Explore to search nearby.';
-      geoButton.disabled = false;
-    }, error => {
-      origin.value = 'destination'; currentCoords = false;
-      const message = error.code === 1 ? 'Location permission was denied. Choose a destination to search instead.' : error.code === 3 ? 'Location request timed out. Try again or choose a destination.' : 'Your location could not be determined. Choose a destination to search instead.';
-      status.textContent = message; geoButton.disabled = false;
-    }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 });
-  });
-  form.addEventListener('submit', event => {
-    if (origin.value === 'current' && (!currentCoords || !latitude.value || !longitude.value)) {
-      event.preventDefault(); status.textContent = 'Use the Current location button again, or choose a destination.'; return;
-    }
-    if (origin.value !== 'current' && !destination.value) {
-      event.preventDefault(); status.textContent = 'Choose a destination or use your current location.'; destination.focus(); return;
-    }
-    const button = document.getElementById('search-button');
-    button.disabled = true; button.textContent = 'Searching…';
-  });
-  if (origin.value === 'current' && currentCoords) {
-    status.textContent = 'Current location is used for this search only.'; destination.required = false;
+  function updateDestinationMode() {
+    const custom = destination.value === '__custom__';
+    customDestinationField.hidden = !custom;
+    destination.required = origin.value !== 'current' && !custom;
+    customDestination.required = origin.value !== 'current' && custom;
   }
-
-  const dialog = document.getElementById('business-details');
-  const content = document.getElementById('business-details-content');
-  const safeText = (tag, value, cls) => { if (!value) return; const el = document.createElement(tag); el.textContent = value; if (cls) el.className = cls; content.append(el); };
-  document.getElementById('business-details-close').addEventListener('click', () => dialog.close());
-  dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
-  document.querySelectorAll('[data-business-details]').forEach(button => button.addEventListener('click', async () => {
-    content.textContent = 'Loading listing details…';
-    document.getElementById('business-details-title').textContent = 'Business details';
-    document.getElementById('business-details-category').textContent = button.dataset.category || 'Listing details';
+  updateDestinationMode();
+  destination.addEventListener('change', () => {
+    origin.value = 'destination'; latitude.value = ''; longitude.value = ''; currentCoords = false;
+    updateDestinationMode();
+    if (destination.value === '__custom__') { customDestination.focus(); status.textContent = 'Enter a place or address in Tripura. Autocomplete is not provided by the public Nominatim service.'; }
+    else { customDestination.value = ''; if (destination.value) summary.textContent = `Searching near ${destination.value}`; }
+  });
+  customDestination.addEventListener('input', () => { origin.value = 'destination'; latitude.value = ''; longitude.value = ''; currentCoords = false; updateDestinationMode(); });
+  geoButton.addEventListener('click', () => {
+    if (!navigator.geolocation) { status.textContent = 'Location is unavailable in this browser. Search manually instead.'; return; }
+    geoButton.disabled = true; status.textContent = 'Requesting your location…';
+    navigator.geolocation.getCurrentPosition(position => { latitude.value = position.coords.latitude; longitude.value = position.coords.longitude; origin.value = 'current'; currentCoords = true; destination.value = ''; customDestination.value = ''; updateDestinationMode(); summary.textContent = 'Searching near your current location'; status.textContent = 'Location is used for this search only.'; geoButton.disabled = false; }, error => { origin.value = 'destination'; updateDestinationMode(); const msg = error.code === 1 ? 'Location permission was denied. Choose a destination or enter one manually.' : 'Location is unavailable. Choose a destination or enter one manually.'; status.textContent = msg; geoButton.disabled = false; }, { timeout: 12000, maximumAge: 60000 });
+  });
+  form.addEventListener('submit', event => { const hasDestination = destination.value === '__custom__' ? Boolean(customDestination.value.trim()) : Boolean(destination.value); if (origin.value !== 'current' && !hasDestination) { event.preventDefault(); status.textContent = destination.value === '__custom__' ? 'Enter a place name or address in Tripura.' : 'Choose a destination in Tripura.'; (destination.value === '__custom__' ? customDestination : destination).focus(); return; } if (origin.value === 'current' && (!currentCoords || !latitude.value || !longitude.value)) { event.preventDefault(); status.textContent = 'Use your location again or choose a destination manually.'; return; } const button = document.getElementById('search-button'); button.disabled = true; button.textContent = 'Searching…'; });
+  const cards = [...document.querySelectorAll('.experience-card[data-osm-id]')], mapEl = document.getElementById('experience-map');
+  cards.forEach(card => { card.addEventListener('click', event => { if (event.target.closest('a,button')) return; card.querySelector('[data-business-details]')?.click(); }); card.addEventListener('keydown', event => { if (event.target === card && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); card.querySelector('[data-business-details]')?.click(); } }); });
+  const loadMoreButton = document.getElementById('experience-load-more');
+  if (loadMoreButton && cards.length > 24) {
+    let visibleCards = 24;
+    cards.forEach((card, index) => { card.hidden = index >= visibleCards; });
+    loadMoreButton.hidden = false;
+    loadMoreButton.addEventListener('click', () => {
+      visibleCards = Math.min(cards.length, visibleCards + 24);
+      cards.forEach((card, index) => { card.hidden = index >= visibleCards; });
+      loadMoreButton.hidden = visibleCards >= cards.length;
+    });
+  }
+  if (mapEl && window.L) {
+    const resultData = {{ results|tojson }};
+    const center = [{{ origin.latitude if origin else 23.83 }}, {{ origin.longitude if origin else 91.28 }}];
+    const map = L.map(mapEl, { scrollWheelZoom: false }).setView(center, 11);
+    L.tileLayer({{ osm_tile_url|tojson }}, { maxZoom: {{ config.get('MAP_MAX_ZOOM',18) }}, attribution: {{ map_attribution|safe }} }).addTo(map);
+    const allMarkers = [];
+    L.marker(center).addTo(map).bindPopup('<strong>{{ origin_name|default("Destination", true)|e }}</strong><br>Search center');
+    resultData.forEach((item, index) => {
+      const icon = L.divIcon({ className: '', html: `<span class="experience-map-marker ${item.icon_category}">${index + 1}</span>`, iconSize: [28, 28], iconAnchor: [14, 14] });
+      const marker = L.marker([item.latitude, item.longitude], { icon }).addTo(map).bindPopup(`<strong>${String(item.name).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</strong><br>${item.category} · ${item.distance_km} km`);
+      marker.on('click', () => selectCard(item.osm_type + '-' + item.osm_id, false)); allMarkers.push(marker);
+    });
+    const bounds = L.latLngBounds([center], allMarkers.map(marker => marker.getLatLng()));
+    const mapStatus = document.getElementById('experience-map-status');
+    map.on('tileerror', () => { mapStatus.hidden = false; mapStatus.textContent = 'Map tiles could not be loaded. The nearby place list is still available.'; });
+    function selectCard(id, pan = true) { cards.forEach(card => card.classList.toggle('is-selected', card.dataset.osmId === id)); const index = cards.findIndex(card => card.dataset.osmId === id); if (index >= 0) { if (pan) { map.setView(allMarkers[index].getLatLng(), 15); allMarkers[index].openPopup(); } cards[index].scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } }
+    cards.forEach((card, index) => { card.addEventListener('mouseenter', () => allMarkers[index].openPopup()); });
+    document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => { const showMap = button.dataset.view === 'map'; mapEl.hidden = !showMap; document.getElementById('experience-list').hidden = showMap; document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item === button))); if (showMap) setTimeout(() => { map.invalidateSize(); if (allMarkers.length) map.fitBounds(bounds.pad(.15), { maxZoom: 13 }); }, 0); }));
+  } else if (mapEl) { const mapButton = document.querySelector('[data-view="map"]'); mapButton.disabled = true; const mapStatus = document.getElementById('experience-map-status'); mapStatus.hidden = false; mapStatus.textContent = 'The interactive map could not be loaded. The nearby place list is still available.'; }
+  const dialog = document.getElementById('business-details'), content = document.getElementById('business-details-content');
+  const addLine = (label, value) => { if (value == null || value === '') return; const p = document.createElement('p'); p.textContent = `${label}: ${Array.isArray(value) ? value.join(', ') : value}`; content.append(p); };
+  document.getElementById('business-details-close').addEventListener('click', () => dialog.close()); dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
+  document.querySelectorAll('[data-business-details]').forEach(button => button.addEventListener('click', () => {
+    content.replaceChildren();
+    document.getElementById('business-details-title').textContent = button.dataset.name;
+    document.getElementById('business-details-category').textContent = button.dataset.category + ' · OpenStreetMap listing';
+    addLine('Address', button.dataset.address || 'Not available in OpenStreetMap');
+    addLine('Description', button.dataset.description || 'Not available in OpenStreetMap');
+    addLine('Distance', `${button.dataset.distance} km straight-line`);
+    addLine('Cuisine', button.dataset.cuisine);
+    addLine('Opening hours', button.dataset.hours || 'Not available in OpenStreetMap');
+    addLine('Entry fee', button.dataset.fee);
+    addLine('Wheelchair access', button.dataset.wheelchair);
+    addLine('Dine-in', button.dataset.dineIn);
+    addLine('Takeaway', button.dataset.takeaway);
+    addLine('Delivery', button.dataset.delivery);
+    addLine('Operator', button.dataset.operator);
+    addLine('Brand', button.dataset.brand);
+    addLine('Email', button.dataset.email);
+    addLine('Phone', button.dataset.phone);
+    if (button.dataset.website) { const link = document.createElement('a'); link.href = button.dataset.website; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = 'Official or listed website ↗'; content.append(link); }
+    if (button.dataset.photo) { const image = document.createElement('img'); image.src = button.dataset.photo; image.alt = 'Photo of ' + button.dataset.name; image.loading = 'lazy'; image.className = 'experience-detail-photo'; content.append(image); }
+    const limitation = document.createElement('p');
+    limitation.textContent = 'Ratings, prices, and current open status are not supplied by this OpenStreetMap listing.';
+    content.append(limitation);
+    const tags = JSON.parse(button.dataset.tags || '{}');
+    const known = new Set(['name', 'name:en', 'description', 'description:en', 'addr:full', 'addr:housenumber', 'addr:street', 'addr:neighbourhood', 'addr:suburb', 'addr:city', 'addr:town', 'addr:village', 'addr:state', 'addr:postcode', 'phone', 'contact:phone', 'website', 'contact:website', 'email', 'contact:email', 'image', 'contact:image', 'opening_hours', 'cuisine', 'operator', 'brand', 'wheelchair', 'fee', 'takeaway', 'delivery', 'dine_in']);
+    Object.entries(tags).filter(([key]) => !known.has(key)).slice(0, 20).forEach(([key, value]) => addLine(key.replaceAll('_', ' '), value));
+    const loc = document.createElement('a'); loc.href = `https://www.openstreetmap.org/?mlat=${button.dataset.lat}&mlon=${button.dataset.lon}#map=17/${button.dataset.lat}/${button.dataset.lon}`; loc.target = '_blank'; loc.rel = 'noopener noreferrer'; loc.textContent = 'View location on OpenStreetMap ↗'; content.append(loc);
     dialog.showModal();
-    const params = new URLSearchParams({ destination: destination.value, origin: origin.value });
-    if (origin.value === 'current') { params.set('latitude', latitude.value); params.set('longitude', longitude.value); }
-    try {
-      const response = await fetch(`/api/local-experiences/${encodeURIComponent(button.dataset.businessDetails)}?${params}`);
-      const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Details are unavailable right now.');
-      document.getElementById('business-details-title').textContent = data.name || 'Business details'; content.replaceChildren();
-      safeText('p', data.category); safeText('p', data.address || 'Address not provided by this listing.');
-      safeText('p', `${data.distance_km} km straight-line distance`);
-      if (data.rating) safeText('p', `★ ${data.rating}/5${data.review_count ? ` · ${data.review_count} reviews` : ''}`);
-      safeText('p', data.business_status?.replaceAll('_', ' ').toLowerCase());
-      if (data.open_now !== null && data.open_now !== undefined) safeText('p', data.open_now ? 'Open now (Google Places)' : 'Closed now (Google Places)');
-      if (data.price_level) safeText('p', `Google price level: ${data.price_level.replaceAll('_', ' ').toLowerCase()} (not a menu price)`);
-      safeText('h3', 'Contact & practical information');
-      if (data.phone) { const phone = document.createElement('a'); phone.href = `tel:${data.phone}`; phone.textContent = data.phone; content.append(phone); }
-      if (data.website) { const site = document.createElement('a'); site.href = data.website; site.target = '_blank'; site.rel = 'noopener noreferrer'; site.textContent = 'Official website ↗'; content.append(site); }
-      if (data.maps_url) { const map = document.createElement('a'); map.href = data.maps_url; map.target = '_blank'; map.rel = 'noopener noreferrer'; map.textContent = 'Open location in Google Maps ↗'; content.append(map); }
-      (data.opening_hours || []).forEach(hour => safeText('p', hour, 'experience-hours-line'));
-      if (button.dataset.category === 'Restaurant' || button.dataset.category === 'Food') {
-        safeText('h3', 'Menu and dishes'); safeText('p', data.menu_message || 'Menu not available online from this listing.');
-      }
-      if (data.photos?.length) { const gallery = document.createElement('div'); gallery.className = 'experience-detail-gallery'; data.photos.forEach(photo => { const img = document.createElement('img'); img.src = photo.url; img.alt = `Photo of ${data.name}`; img.loading = 'lazy'; gallery.append(img); }); content.append(gallery); }
-      safeText('p', `Listing information supplied by ${data.data_source || 'Google Places'}. Hours, availability, and business details can change; verify with the business.`);
-    } catch (error) { content.replaceChildren(); safeText('p', error.message, 'experience-detail-error'); }
   }));
 })();
 </script>
