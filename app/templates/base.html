@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ site_name }} — {{ site_tagline }}{% endblock %}</title>
-  <meta name="description" content="{% block description %}Discover destinations across Tripura, plan a day-wise trip and find local experiences.{% endblock %}">
+  <meta name="description" content="{% block description %}Discover destinations across Tripura and plan your trip.{% endblock %}">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,7 +41,6 @@
           <li><a class="nav__link {{ 'is-active' if request.endpoint == 'map.map_page' }}" href="{{ url_for('map.map_page') }}">Map</a></li>
           <li><a class="nav__link {{ 'is-active' if request.endpoint == 'smart_route.lab_page' }}" href="{{ url_for('smart_route.lab_page') }}">Smart Route Lab</a></li>
           <li><a class="nav__link {{ 'is-active' if request.endpoint == 'itineraries.trip_planner' }}" href="{{ url_for('itineraries.trip_planner') }}">Trip Planner</a></li>
-          <li><a class="nav__link {{ 'is-active' if request.endpoint == 'experiences.index' }}" href="{{ url_for('experiences.index') }}">Local Experiences</a></li>
           {% if current_user.is_authenticated %}
             <li><a class="nav__link {{ 'is-active' if request.endpoint == 'itineraries.my_trips' }}" href="{{ url_for('itineraries.my_trips') }}">Saved Trips</a></li>
           {% endif %}
@@ -84,7 +83,6 @@
           <ul class="footer-list">
             <li><a href="{{ url_for('places.explore') }}">Explore places</a></li>
             <li><a href="{{ url_for('map.map_page') }}">Interactive map</a></li>
-            <li><a href="{{ url_for('experiences.index') }}">Local experiences</a></li>
           </ul>
         </div>
         <div>

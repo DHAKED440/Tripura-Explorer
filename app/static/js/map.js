@@ -1144,6 +1144,19 @@
           showRoutePreview(chosen);
         }, function () {
           setNavState(NavState.IDLE);
+          if (window.TripuraExplore) {
+            window.TripuraExplore.showToast("Select a starting point on the map to preview this route.", "info");
+          }
+          map.once("click", function (event) {
+            if (!nav.destination || String(nav.destination.id) !== String(chosen.id)) return;
+            userCoords = {
+              lat: event.latlng.lat, lng: event.latlng.lng,
+              accuracy: 0, heading: null, timestamp: Date.now(), manual: true
+            };
+            L.marker([userCoords.lat, userCoords.lng])
+              .addTo(map).bindPopup("Selected route starting point").openPopup();
+            showRoutePreview(chosen);
+          });
         });
         return;
       }
@@ -1674,6 +1687,8 @@
     function handleUrlDestination(places) {
       var urlParams = new URLSearchParams(window.location.search);
       var targetId = urlParams.get("place_id") || urlParams.get("id");
+      var providerId = urlParams.get("osm_id");
+      var providerType = urlParams.get("osm_type");
       var targetSlug = urlParams.get("slug") || urlParams.get("place");
       var targetName = urlParams.get("name") || urlParams.get("title");
       var targetDest = urlParams.get("destination");
@@ -1693,7 +1708,10 @@
       }
 
       var matchedPlace = null;
-      if (places && places.length) {
+      // OSM search results are separate from the published destination
+      // directory. Never match their numeric provider ID against a local DB
+      // ID, or snap their coordinates to a nearby destination marker.
+      if (places && places.length && !providerId) {
         matchedPlace = places.find(function (p) {
           if (targetId && String(p.id) === String(targetId)) return true;
           if (targetSlug && p.slug === targetSlug) return true;
@@ -1727,7 +1745,9 @@
       }
       if (!targetMarker) {
         var customObj = matchedPlace || {
-          id: targetId || null,
+          id: providerId && providerType ? providerType + "/" + providerId : (targetId || null),
+          osm_type: providerType || null,
+          osm_id: providerId || null,
           slug: targetSlug || "",
           name: destName,
           lat: targetLat,

@@ -1,8 +1,12 @@
 """Local experiences directory and inquiry handling."""
 from app.models import Business, Inquiry
+from app.extensions import db
 from app.services.local_experience_search import (
     OSMServiceError,
     SearchResults,
+    _CACHE,
+    _CACHE_LOCK,
+    _OVERPASS_COOLDOWNS,
     _normalize_element,
     _overpass_query,
     search_nearby,
@@ -13,6 +17,13 @@ import json
 import pytest
 from urllib.error import HTTPError
 from urllib.parse import parse_qs, urlsplit
+
+
+@pytest.fixture(autouse=True)
+def clear_osm_search_state():
+    with _CACHE_LOCK:
+        _CACHE.clear()
+    _OVERPASS_COOLDOWNS.clear()
 
 
 def test_seeded_provider_records_are_not_presented_as_live_businesses(client, app):
@@ -126,32 +137,37 @@ def test_experiences_page_offers_tripura_presets_and_no_seed_providers(client):
     assert b"Demo" not in body
 
 
-def test_local_experiences_search_defaults_to_dumboor_and_25km(client):
+def test_local_experiences_search_has_fixed_area_and_only_supported_filters(client):
     page = client.get("/experiences").get_data(as_text=True)
-    assert 'name="radius"' in page
-    assert 'value="25" selected' in page
+    assert 'name="radius"' not in page
+    assert 'name="keyword"' not in page
+    assert 'id="geo-btn"' not in page
+    assert 'value="Accommodation"' not in page
+    assert 'value="Tourist Attractions"' not in page
     assert "GOOGLE_MAPS_API_KEY" not in page
     assert "Dumboor Lake, Gandacherra, Tripura, India" in page
+    assert "Tripura Sundari Temple, Matabari, Udaipur, Tripura, India" not in page
     assert "OpenStreetMap" in page
 
 
-def test_local_experiences_current_location_uses_backend_search_without_keys(client):
+def test_local_experiences_uses_selected_destination_and_fixed_search_area(client):
     page = client.get("/experiences").get_data(as_text=True)
     assert 'method="post"' in page
-    assert "Use my location" in page
+    assert "Use my location" not in page
 
     result = {"id": "node/42", "osm_type": "node", "osm_id": 42, "name": "Provider result", "category": "Food & Restaurants",
               "address": "Agartala", "distance_km": 1.2, "raw_tags": {}, "latitude": 23.83, "longitude": 91.28,
               "directions": "/map?lat=23.83&lng=91.28&name=Provider+result"}
-    with patch("app.routes.experiences.search_nearby", return_value=[result]) as search:
+    with patch("app.routes.experiences.geocode_destination", return_value={"name": "Agartala", "latitude": 23.83, "longitude": 91.28}), \
+         patch("app.routes.experiences.search_nearby", return_value=[result]) as search:
         response = client.post("/experiences", data={
-            "csrf_token": "", "search": "1", "origin": "current", "latitude": "23.83",
-            "longitude": "91.28", "category": "Food & Restaurants", "radius": "25", "keyword": "",
+            "csrf_token": "", "search": "1", "destination": "Agartala, Tripura, India",
+            "category": "Food & Restaurants", "radius": "50", "keyword": "ignored",
         })
     assert response.status_code == 200
     assert b"1.2 km straight-line" in response.data
-    assert "Current location" in response.get_data(as_text=True)
-    assert search.call_args.args[:4] == (23.83, 91.28, 25, "Food & Restaurants")
+    assert "Current location" not in response.get_data(as_text=True)
+    assert search.call_args.args == (23.83, 91.28, 10, "Food & Restaurants", "")
 
 
 def test_geocode_api_resolves_submitted_destination_and_returns_attribution(client):
@@ -288,7 +304,26 @@ def test_overpass_timeout_has_a_specific_retryable_error(app):
             search_nearby(23.41, 91.61, 5, "Tourist Attractions")
     assert caught.value.provider_status == "timeout"
     assert caught.value.retryable is True
-    assert "smaller radius" in caught.value.public_message
+    assert "retry shortly" in caught.value.public_message
+
+
+def test_provider_timeout_returns_only_previously_saved_osm_restaurants_as_partial(app):
+    from app.services.local_experience_search import search_nearby
+
+    with app.app_context():
+        db.session.add(OSMRestaurant(
+            osm_type="node", osm_id="7001", name="Saved real cafe",
+            latitude=23.831, longitude=91.281,
+            source_url="https://www.openstreetmap.org/node/7001",
+            raw_tags={"amenity": "cafe", "name": "Saved real cafe"},
+        ))
+        db.session.commit()
+        with patch("app.services.local_experience_search.urlopen", side_effect=TimeoutError):
+            results = search_nearby(23.83, 91.28, 10, "Food & Restaurants")
+    assert results.provider_degraded is True
+    assert [item["name"] for item in results] == ["Saved real cafe"]
+    assert results[0]["osm_id"] == 7001
+    assert results[0]["rating"] is None
 
 
 def test_overpass_rate_limit_is_not_reported_as_a_generic_failure(app):
@@ -414,8 +449,8 @@ def test_api_provider_timeout_returns_safe_retryable_error(client):
 
 def test_geolocation_permission_denial_has_a_manual_search_path(client):
     page = client.get("/experiences").get_data(as_text=True)
-    assert "Location permission was denied" in page
-    assert "Choose a destination or enter one manually" in page
+    assert "Use my location" not in page
+    assert "Choose a listed destination" in page
 
 
 def test_destination_form_can_search_unlisted_place_names(client):

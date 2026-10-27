@@ -29,7 +29,7 @@
         <label class="visually-hidden" for="home-search">Search destinations</label>
         <div class="hero-search__row">
           {{ icon("search", 18, "hero-search__icon") }}
-          <input id="home-search" type="search" name="q" placeholder="Search places, districts, experiences…" list="destination-suggestions">
+          <input id="home-search" type="search" name="q" placeholder="Search places and districts…" list="destination-suggestions">
           <datalist id="destination-suggestions">
             {% for place in featured_places %}<option value="{{ place.name }}"></option>{% endfor %}
           </datalist>

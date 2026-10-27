@@ -75,7 +75,7 @@
           <div class="field">
             <label for="budget">Budget in INR (optional)</label>
             <input id="budget" name="budget" type="number" min="0" step="100" value="{{ form_values.budget or '' }}" placeholder="e.g. 8000">
-            <span class="hint">Recorded with the trip. No cost estimate is shown until prices are verified.</span>
+            <span class="hint">Your budget is saved with the trip. The plan lists destination charges when available; transport and meal prices are not included.</span>
           </div>
           <div class="field">
             <label for="travel_date">Travel date (optional)</label>
@@ -103,7 +103,7 @@
               in to save, reorder or share the trip.</p>
             <div class="data-status" style="text-align:left;max-width:56ch;margin:0 auto">
               <div class="alert alert--info">{{ icon("info", 18) }}<span>Matching uses the interest tags stored on each destination record.</span></div>
-              <div class="alert alert--warning">{{ icon("alert", 18) }}<span>Travel times and opening hours are not verified yet, so no timed schedule is produced.</span></div>
+              <div class="alert alert--info">{{ icon("info", 18) }}<span>The planner suggests a stop order. Check destination details and directions before travelling.</span></div>
             </div>
           </div>
         {% endif %}

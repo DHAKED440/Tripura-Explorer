@@ -64,88 +64,8 @@ def validate_inquiry_payload(payload: dict) -> tuple[dict, list[str]]:
 
 @bp.route("/experiences", methods=["GET", "POST"])
 def index():
-    """Search mapped OpenStreetMap features around a submitted destination."""
-    params = request.values
-    category = params.get("category", "All types")
-    if category == "All types":
-        category = "All Places"
-    destination_selection = " ".join(params.get("destination", "").split())[:200]
-    custom_destination = " ".join(params.get("custom_destination", "").split())[:200]
-    destination_query = custom_destination if destination_selection == "__custom__" else destination_selection
-    keyword = " ".join(params.get("keyword", "").split())[:100]
-    origin_mode = params.get("origin", "destination")
-    try:
-        radius_km = int(params["radius"]) if params.get("radius") else 25
-    except ValueError:
-        radius_km = 25
-    if radius_km not in {5, 10, 25, 50}:
-        radius_km = 25
-    if category not in CATEGORY_LABELS:
-        category = "All Places"
-    destinations = Place.query.filter(Place.is_published.is_(True)).order_by(Place.name.asc()).all()
-    destination_options = []
-    for place in destinations:
-        area = place.locality or (place.district.name if place.district else "")
-        label = place.name
-        if area and area.casefold() not in place.name.casefold():
-            label = f"{place.name}, {area}, Tripura, India"
-        destination_options.append(label)
-    if not destination_query and origin_mode != "current":
-        destination_query = next(
-            (label for label in destination_options if label.casefold().startswith("dumboor lake")),
-            "Dumboor Lake, Tripura, India",
-        )
-    origin = None
-    origin_name = destination_query or None
-    if origin_mode == "current":
-        try:
-            lat, lng = float(params.get("latitude", "")), float(params.get("longitude", ""))
-            if not (math.isfinite(lat) and math.isfinite(lng) and -90 <= lat <= 90 and -180 <= lng <= 180):
-                raise ValueError
-            origin = SimpleNamespace(latitude=lat, longitude=lng, name="Current location", district=None)
-            origin_name = "Current location"
-        except (ValueError, TypeError):
-            origin = None
-    results, error, searched = [], None, params.get("search") == "1"
-    error_retryable = False
-    results_limited = False
-    geocode_error = None
-    if searched:
-        if origin is None:
-            try:
-                resolved = geocode_destination(destination_query)
-                if resolved:
-                    origin = SimpleNamespace(**resolved, district=None)
-                    origin_name = destination_query
-                else:
-                    geocode_error = "Could not find this destination in Tripura. Try another location."
-            except OSMServiceError as exc:
-                geocode_error = exc.public_message
-                error_retryable = exc.retryable
-        if origin is None:
-            error = geocode_error or "Choose a destination or use your current location for this search."
-        else:
-            try:
-                results = search_nearby(origin.latitude, origin.longitude, radius_km, category, keyword)
-                if category in {"All Places", "Food & Restaurants"}:
-                    persist_discovered_restaurants(results)
-                results_limited = bool(getattr(results, "truncated", False))
-            except OSMServiceError as exc:
-                current_app.logger.warning("OpenStreetMap nearby search failed: status=%s", exc.provider_status)
-                error = exc.public_message
-                error_retryable = exc.retryable
-    return render_template(
-        "experiences.html", destinations=destination_options, destination=destination_query, origin=origin,
-        origin_name=origin_name, origin_mode=origin_mode,
-        search_latitude=params.get("latitude", ""), search_longitude=params.get("longitude", ""),
-        category=category, keyword=keyword, radius_km=radius_km, results=results,
-        search_error=error, searched=searched, categories=CATEGORY_LABELS,
-        search_error_retryable=error_retryable,
-        results_limited=results_limited,
-        destination_selection=destination_selection,
-        custom_destination=custom_destination,
-        osm_tile_url=current_app.config["MAP_TILE_URL"], map_attribution=current_app.config["MAP_TILE_ATTRIBUTION"],
-    )
+    """Retire the Local Experiences page and send old links to place discovery."""
+    return redirect(url_for("places.explore"), code=302)
 
 
 @bp.get("/api/local-experiences/geocode")
@@ -209,12 +129,13 @@ def api_local_experiences():
         return jsonify({"error": "Unknown experience category."}), 400
     except OSMServiceError as exc:
         return jsonify({"error": exc.public_message, "error_code": exc.provider_status, "retryable": exc.retryable}), exc.http_status
-    if category in {"All Places", "Food & Restaurants"}:
+    if category in {"All Places", "Food & Restaurants"} and not getattr(records, "provider_degraded", False):
         persist_discovered_restaurants(records)
     start = (page - 1) * LOCAL_EXPERIENCE_PAGE_SIZE
     page_records = records[start:start + LOCAL_EXPERIENCE_PAGE_SIZE]
     has_more = start + len(page_records) < len(records)
     truncated = bool(getattr(records, "truncated", False))
+    provider_degraded = bool(getattr(records, "provider_degraded", False))
     return jsonify({
         "destination": {"name": destination.name,
                         "latitude": destination.latitude, "longitude": destination.longitude},
@@ -222,6 +143,8 @@ def api_local_experiences():
         "results_returned": len(page_records), "result_count": None if truncated else len(records),
         "result_count_is_exact": not truncated, "has_more": has_more,
         "next_page": page + 1 if has_more else None, "result_set_limited": truncated,
+        "partial_results": provider_degraded,
+        "provider_notice": "Showing previously discovered OpenStreetMap restaurants while the live provider is unavailable." if provider_degraded else None,
         "attribution": "© OpenStreetMap contributors",
     })
 

@@ -174,11 +174,11 @@ def _cluster_places(ordered_places: list) -> list[dict]:
 
 def generate_plan(preferences: ItineraryPreferences, places: list) -> dict:
     """Build the day-by-day plan for the given preferences and candidate places."""
-    notes: list[str] = []
-    warnings: list[str] = [
-        "Travel time, opening hours and entry fees are not verified yet for this prototype, "
-        "so the plan shows a suggested order of stops rather than a timed schedule."
+    notes: list[str] = [
+        "This is a suggested stop order, not a timed schedule. Check each destination's details and "
+        "directions before travelling."
     ]
+    warnings: list[str] = []
 
     ranked = rank_places(list(places), preferences.interests)
     capacity = preferences.duration_days * MAX_STOPS_PER_DAY
@@ -272,9 +272,9 @@ def generate_plan(preferences: ItineraryPreferences, places: list) -> dict:
         notes.append("Matched interests: " + ", ".join(ranked_interest_labels) + ".")
 
     if preferences.budget is not None:
-        warnings.append(
-            "Budget planning is limited: the prototype has no verified price data, "
-            "so your budget was recorded but no cost estimate was produced."
+        notes.append(
+            f"Your ₹{preferences.budget:,} budget is saved with this plan. A trip total is not shown "
+            "because transport, meals and current destination charges are not available as consistent prices."
         )
     if preferences.travel_date is not None:
         if preferences.travel_date < date.today():

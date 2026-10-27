@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import math
+import random
 import re
 import threading
 import time
@@ -68,6 +69,7 @@ _CACHE_LIMIT = 512
 _CACHE_LOCK = threading.Lock()
 _NOMINATIM_LOCK = threading.Lock()
 _OVERPASS_LOCK = threading.Lock()
+_OVERPASS_COOLDOWNS: dict[str, tuple[float, str]] = {}
 _LAST_NOMINATIM_REQUEST = 0.0
 _GEOCODE_TTL = 86400
 _SEARCH_TTL = 300
@@ -120,18 +122,20 @@ _API_PAGE_SIZE = 24
 class SearchResults(list):
     """A list compatible with existing callers that records provider truncation."""
 
-    def __init__(self, values=(), *, truncated: bool = False):
+    def __init__(self, values=(), *, truncated: bool = False, provider_degraded: bool = False):
         super().__init__(values)
         self.truncated = truncated
+        self.provider_degraded = provider_degraded
 
 
 class OSMServiceError(Exception):
     """A safe, classified provider error for the UI and API."""
 
-    def __init__(self, public_message: str, provider_status: str | None = None):
+    def __init__(self, public_message: str, provider_status: str | None = None, http_status_code: int | None = None):
         super().__init__(public_message)
         self.public_message = public_message
         self.provider_status = provider_status or "unavailable"
+        self.http_status_code = http_status_code
 
     @property
     def retryable(self) -> bool:
@@ -179,12 +183,12 @@ def _provider_headers() -> dict[str, str]:
 
 def _safe_provider_error(exc: HTTPError, action: str) -> OSMServiceError:
     if exc.code == 429:
-        return OSMServiceError(f"{action} is rate-limited by OpenStreetMap right now. Wait a moment, then retry.", "rate_limited")
+        return OSMServiceError(f"{action} is rate-limited by OpenStreetMap right now. Wait a moment, then retry.", "rate_limited", exc.code)
     if exc.code in {408, 504}:
-        return OSMServiceError(f"{action} took too long. Try a smaller search radius or retry shortly.", "timeout")
+        return OSMServiceError(f"{action} took too long. The public map service may be busy; please retry shortly.", "timeout", exc.code)
     if exc.code in {500, 502, 503}:
-        return OSMServiceError(f"The OpenStreetMap search service is temporarily unavailable. Retry shortly.", "unavailable")
-    return OSMServiceError(f"{action} could not be completed by the OpenStreetMap service. Check the destination and retry.", "provider_error")
+        return OSMServiceError("The OpenStreetMap search service is temporarily unavailable. Retry shortly.", "unavailable", exc.code)
+    return OSMServiceError(f"{action} could not be completed by the OpenStreetMap service. Check the destination and retry.", "provider_error", exc.code)
 
 
 def geocode_destination(query: str) -> dict | None:
@@ -388,8 +392,8 @@ def _normalize_element(element: dict, origin_lat: float, origin_lon: float) -> d
 
 def _read_overpass(req: Request) -> dict:
     timeout = current_app.config.get("OSM_OVERPASS_TIMEOUT", 18)
-    # Public Overpass servers may shed load. One short retry is limited to
-    # transient gateway errors, not timeouts or rate-limit responses.
+    # Retry only a transient gateway response once. Do not repeat timeouts or
+    # 429s against the same public instance.
     for attempt in range(2):
         try:
             with urlopen(req, timeout=timeout) as response:
@@ -399,20 +403,46 @@ def _read_overpass(req: Request) -> dict:
             return payload
         except HTTPError as exc:
             if attempt == 0 and exc.code in {502, 503}:
-                time.sleep(0.25)
+                delay = 0.25 * (2 ** attempt) + random.uniform(0.0, 0.2)
+                time.sleep(min(delay, 1.5))
                 continue
             raise _safe_provider_error(exc, "Nearby places search") from exc
         except TimeoutError as exc:
-            raise OSMServiceError("Nearby search timed out at OpenStreetMap. Try a smaller radius or retry shortly.", "timeout") from exc
+            raise OSMServiceError("Nearby search timed out at OpenStreetMap. The public map service may be busy; please retry shortly.", "timeout") from exc
         except URLError as exc:
             if isinstance(exc.reason, TimeoutError):
-                raise OSMServiceError("Nearby search timed out at OpenStreetMap. Try a smaller radius or retry shortly.", "timeout") from exc
+                raise OSMServiceError("Nearby search timed out at OpenStreetMap. The public map service may be busy; please retry shortly.", "timeout") from exc
             raise OSMServiceError("Could not connect to the nearby search service. Check your connection and retry.", "unavailable") from exc
         except OSError as exc:
             raise OSMServiceError("Could not connect to the nearby search service. Check your connection and retry.", "unavailable") from exc
         except (json.JSONDecodeError, UnicodeDecodeError) as exc:
             raise OSMServiceError("The nearby search service returned an unreadable response. Retry shortly.", "bad_response") from exc
     raise OSMServiceError("The nearby search service is temporarily unavailable. Retry shortly.", "unavailable")
+
+
+def _cached_restaurant_results(latitude: float, longitude: float, radius_km: int, keyword: str) -> SearchResults:
+    """Use previously discovered real OSM restaurants as an explicitly partial fallback."""
+    if not has_app_context():
+        return SearchResults()
+    from app.models import OSMRestaurant
+
+    try:
+        rows = OSMRestaurant.query.all()
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception("Could not read cached OSM restaurant fallback")
+        return SearchResults()
+    needle = keyword.casefold()
+    records = []
+    for row in rows:
+        item = row.to_dict(latitude, longitude)
+        if item["distance_km"] > radius_km:
+            continue
+        if needle and needle not in (item["name"] + " " + json.dumps(item["raw_tags"], ensure_ascii=False)).casefold():
+            continue
+        records.append(item)
+    records.sort(key=lambda item: (item["distance_km"], item["name"].casefold()))
+    return SearchResults(records[:_MAX_RESULTS], truncated=len(records) > _MAX_RESULTS, provider_degraded=True)
 
 
 def search_nearby(latitude: float, longitude: float, radius_km: int, category: str = "All Places", keyword: str = "") -> list[dict]:
@@ -427,22 +457,89 @@ def search_nearby(latitude: float, longitude: float, radius_km: int, category: s
     key = ("overpass", round(latitude, 5), round(longitude, 5), radius_km, category, normalized_keyword.casefold())
     cached = _cached(key)
     if cached is not _CACHE_MISS:
+        if isinstance(cached, OSMServiceError):
+            raise cached
         return cached
 
     endpoint = current_app.config.get("OVERPASS_URL", "https://overpass-api.de/api/interpreter")
+    fallback_endpoints = current_app.config.get(
+        "OVERPASS_FALLBACK_URLS", ("https://overpass.private.coffee/api/interpreter",)
+    )
+    if isinstance(fallback_endpoints, str):
+        fallback_endpoints = fallback_endpoints.split(",")
+    endpoints = list(dict.fromkeys(
+        str(url).strip() for url in (endpoint, *fallback_endpoints) if str(url).strip()
+    ))
     query = _overpass_query(latitude, longitude, radius_km * 1000, category)
     body = urlencode({"data": query}).encode()
     headers = _provider_headers()
     headers.update({"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"})
-    req = Request(endpoint, data=body, method="POST", headers=headers)
     try:
-        # Keep pressure on the public endpoint bounded even when many users
-        # submit different coordinates at once in a single application worker.
+        # Keep public provider load bounded: one search at a time, one retry
+        # only for 502/503, then at most one compatible fallback endpoint.
         with _OVERPASS_LOCK:
-            payload = _read_overpass(req)
+            last_error = None
+            available = [provider for provider in endpoints
+                         if _OVERPASS_COOLDOWNS.get(provider, (0.0, ""))[0] <= time.monotonic()]
+            if not available:
+                last_error = OSMServiceError(
+                    "The nearby place providers are temporarily unavailable. Please retry in a few seconds.",
+                    "unavailable",
+                )
+                _store(key, last_error, 4)
+                raise last_error
+            for index, provider in enumerate(available[:2]):
+                started = time.perf_counter()
+                req = Request(provider, data=body, method="POST", headers=headers)
+                try:
+                    payload = _read_overpass(req)
+                    _OVERPASS_COOLDOWNS.pop(provider, None)
+                    current_app.logger.info(
+                        "Overpass search completed provider=%s elapsed_ms=%d elements=%d category=%s radius_km=%d",
+                        urlsplit(provider).hostname, round((time.perf_counter() - started) * 1000),
+                        len(payload["elements"]), category, radius_km,
+                    )
+                    break
+                except OSMServiceError as exc:
+                    last_error = exc
+                    elapsed_ms = round((time.perf_counter() - started) * 1000)
+                    cooldown = 30 if exc.provider_status == "rate_limited" else 8
+                    if exc.provider_status == "rate_limited":
+                        try:
+                            retry_after = int(exc.__cause__.headers.get("Retry-After", "30"))
+                            cooldown = max(30, min(retry_after, 300))
+                        except (AttributeError, TypeError, ValueError):
+                            cooldown = 30
+                    if exc.provider_status in {"timeout", "unavailable", "rate_limited"}:
+                        _OVERPASS_COOLDOWNS[provider] = (time.monotonic() + cooldown, exc.provider_status)
+                    current_app.logger.warning(
+                        "Overpass search failed provider=%s http_status=%s status=%s elapsed_ms=%d category=%s radius_km=%d",
+                        urlsplit(provider).hostname, exc.http_status_code or "no-response",
+                        exc.provider_status, elapsed_ms, category, radius_km,
+                    )
+                    if index == len(available[:2]) - 1 or exc.provider_status not in {
+                        "timeout", "unavailable", "rate_limited"
+                    }:
+                        raise
+                    current_app.logger.info(
+                        "Overpass failover provider=%s after status=%s",
+                        urlsplit(available[index + 1]).hostname, exc.provider_status,
+                    )
+            else:
+                raise last_error or OSMServiceError(
+                    "The nearby search service is temporarily unavailable. Retry shortly.", "unavailable"
+                )
     except OSMServiceError as exc:
-        current_app.logger.warning("Overpass nearby search failed: status=%s radius_km=%s category=%s",
-                                   exc.provider_status, radius_km, category)
+        if category in {"All Places", "Food & Restaurants"}:
+            partial = _cached_restaurant_results(latitude, longitude, radius_km, normalized_keyword)
+            if partial:
+                current_app.logger.warning(
+                    "Serving cached OSM results after provider failure status=%s count=%d category=%s radius_km=%d",
+                    exc.provider_status, len(partial), category, radius_km,
+                )
+                _store(key, partial, _SEARCH_TTL)
+                return partial
+        _store(key, exc, 4)
         raise
 
     records, seen = [], set()

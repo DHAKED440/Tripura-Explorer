@@ -212,7 +212,7 @@ Copy `.env.example` to `.env` and fill in the values. Nothing secret is hard-cod
 | `COOKIE_SECURE` | Set to `true` behind HTTPS |
 | `SESSION_LIFETIME_MINUTES` | Session length (default 120) |
 | `MAP_TILE_URL`, `MAP_TILE_ATTRIBUTION`, `MAP_MAX_ZOOM` | Tile provider configuration |
-| `OSM_USER_AGENT`, `APPLICATION_URL`, `GEOCODER_URL`, `OVERPASS_URL` | Identify the app and configure compatible OSM data services; no Google API key is required |
+| `OSM_USER_AGENT`, `APPLICATION_URL`, `GEOCODER_URL`, `OVERPASS_URL`, `OVERPASS_FALLBACK_URLS` | Identify the app and configure the primary and comma-separated compatible OSM data services |
 | `OSM_GEOCODER_TIMEOUT`, `OSM_OVERPASS_TIMEOUT` | Bound destination and nearby-search provider waits (defaults: 8 and 18 seconds) |
 | `PLACES_PER_PAGE`, `LOG_LEVEL`, `FLASK_CONFIG` | Development tuning |
 
@@ -223,6 +223,11 @@ service does not permit client-side autocomplete, so the page offers the app's
 published Tripura locations plus an explicit place/address search on submit.
 Public OSM endpoints have no availability SLA, and OSM coverage in Tripura varies;
 the page reports outages and missing facts instead of substituting demo results.
+Nearby-search failures are logged by provider hostname, HTTP status, elapsed time,
+category, and search area. A failing endpoint is briefly cooled down; 429 responses
+are held for at least 30 seconds, and a single jittered retry is made only for 502/503
+gateway responses. Configure a self-hosted or licensed compatible Overpass endpoint
+in `OVERPASS_URL` and `OVERPASS_FALLBACK_URLS` for dependable production availability.
 Restaurant results discovered by food searches are upserted by OSM element ID into the separate
 `osm_restaurants` table. This grows from searches people make; it is not a complete Tripura-wide
 restaurant inventory. Mapped cuisine, hours, contact details, service options, and image links appear

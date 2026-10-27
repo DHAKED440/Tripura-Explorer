@@ -60,11 +60,11 @@ def test_generated_plan_has_valid_days_and_no_duplicates(app):
             assert len(day["stops"]) <= 3
 
 
-def test_generated_plan_reports_missing_data(app):
+def test_generated_plan_explains_suggested_order(app):
     places = Place.query.filter_by(is_published=True).all()
     preferences, _ = ItineraryPreferences.from_payload(VALID)
     plan = generate_plan(preferences, places)
-    assert any("not verified" in warning for warning in plan["warnings"])
+    assert any("suggested stop order" in note for note in plan["notes"])
 
 
 def test_plan_with_no_matching_places_is_explained(app):

@@ -167,6 +167,11 @@ class Place(db.Model):
             "longitude": self.longitude,
             "coordinates_verified": self.coordinates_verified,
             "is_verified": self.is_verified,
+            "opening_info": self.opening_info,
+            "closed_day": self.closed_day,
+            "typical_visit_hours": self.typical_visit_hours,
+            "entry_fee_indian": self.entry_fee_indian,
+            "entry_fee_foreign": self.entry_fee_foreign,
             "directions_url": self.directions_url,
             "url": f"/places/{self.slug}",
         }

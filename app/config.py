@@ -93,6 +93,13 @@ class Config:
     APPLICATION_URL = os.environ.get("APPLICATION_URL", "")
     GEOCODER_URL = os.environ.get("GEOCODER_URL", "https://nominatim.openstreetmap.org/search")
     OVERPASS_URL = os.environ.get("OVERPASS_URL", "https://overpass-api.de/api/interpreter")
+    # Keep a compatible public endpoint available when the primary Overpass
+    # instance is busy. Operators may replace this list for their deployment.
+    OVERPASS_FALLBACK_URLS = tuple(
+        url.strip() for url in os.environ.get(
+            "OVERPASS_FALLBACK_URLS", "https://overpass.private.coffee/api/interpreter"
+        ).split(",") if url.strip()
+    )
     OSM_GEOCODER_TIMEOUT = min(20, max(1, env_int("OSM_GEOCODER_TIMEOUT", 8)))
     OSM_OVERPASS_TIMEOUT = min(25, max(3, env_int("OSM_OVERPASS_TIMEOUT", 18)))
 

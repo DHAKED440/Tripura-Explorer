@@ -47,6 +47,15 @@
                     <img src="{{ place.image_url or url_for('static', filename='images/place-placeholder.svg') }}"
                          alt="" width="70" height="54" style="border-radius:8px;object-fit:cover">
                   </div>
+                  {% if place.opening_info or place.closed_day or place.typical_visit_hours or place.entry_fee_indian or place.entry_fee_foreign %}
+                    <p class="text-muted" style="font-size:.82rem;margin:8px 0 0">
+                      {% if place.opening_info %}Hours: {{ place.opening_info }}{% endif %}
+                      {% if place.closed_day %}{% if place.opening_info %} · {% endif %}Closed: {{ place.closed_day }}{% endif %}
+                      {% if place.typical_visit_hours %} · Suggested visit: {{ place.typical_visit_hours }} hours{% endif %}
+                      {% if place.entry_fee_indian %} · Indian visitors: {{ place.entry_fee_indian }}{% endif %}
+                      {% if place.entry_fee_foreign %} · International visitors: {{ place.entry_fee_foreign }}{% endif %}
+                    </p>
+                  {% endif %}
                   {% if stop.leg_km is not none %}
                     <p class="text-muted" style="font-size:.82rem;margin:10px 0 0">
                       {{ icon("map", 14) }} ≈ {{ stop.leg_km }} km straight line from the previous stop

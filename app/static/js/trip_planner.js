@@ -52,6 +52,15 @@
     var directions = place.map_ready
       ? ""
       : "";
+    var visitFacts = [];
+    if (place.opening_info) visitFacts.push("Hours: " + escapeHtml(place.opening_info));
+    if (place.closed_day) visitFacts.push("Closed: " + escapeHtml(place.closed_day));
+    if (place.typical_visit_hours) visitFacts.push("Suggested visit: " + escapeHtml(place.typical_visit_hours) + " hours");
+    if (place.entry_fee_indian) visitFacts.push("Indian visitors: " + escapeHtml(place.entry_fee_indian));
+    if (place.entry_fee_foreign) visitFacts.push("International visitors: " + escapeHtml(place.entry_fee_foreign));
+    var visitDetails = visitFacts.length
+      ? '<p class="text-muted" style="font-size:.82rem;margin:8px 0 0">' + visitFacts.join(" · ") + "</p>"
+      : "";
     return (
       '<li class="timeline__item">' +
       '<span class="timeline__marker">' +
@@ -68,6 +77,7 @@
       "</p></div>" +
       image +
       "</div>" +
+      visitDetails +
       leg +
       directions +
       "</div></li>"
