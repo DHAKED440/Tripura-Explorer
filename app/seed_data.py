@@ -25,14 +25,14 @@ PLACE_PHOTO_OVERRIDES = {
     "neermahal": "neermahal.jpg",
     "rudrasagar-lake": "rudrasagar-lake.jpg",
     "unakoti": "unakoti.jpg",
-    "ujjayanta-palace": "ujjayanta-palace.jpg",
+    "ujjayanta-palace": "ujjayanta-palace-2.jpg",
     "tripura-sundari-temple": "tripura-sundari-temple.jpg",
     "jampui-hills": "jampui-hills.jpg",
     "dumboor-lake": "dumboor-lake.jpg",
-    "sepahijala-wildlife-sanctuary": "sepahijala-wildlife-sanctuary.jpg",
-    "chabimura-debtamura": "chabimura-debtamura.jpg",
+    "sepahijala-wildlife-sanctuary": "sepahijala-zoo-gallery-3.jpg",
+    "chabimura-debtamura": "chabimura-gallery-3.jpg",
     "pilak": "pilak.jpg",
-    "bhuvaneswari-temple": "bhuvaneswari-temple.jpg",
+    "bhuvaneswari-temple": "bhuvaneswari-temple-1.jpg",
     "boxanagar": "boxanagar.jpg",
     "heritage-park": "heritage-park.jpg",
     "kamalasagar": "kamalasagar.jpg",
@@ -160,7 +160,7 @@ PLACES = [
         "facilities": "Lakeside promenade, boat ghat, parking, food stalls and viewing decks.",
         "accessibility_info": "Promenade is level; boat access requires boarding from stepped ghats.",
         "safety_notes": "Wear life jackets during boat rides and stay within designated safety zones.",
-        "image_alt": "Tranquil waters of Rudrasagar Lake at sunset with boat jetty.",
+        "image_alt": "Boats crossing Rudrasagar Lake through its green wetland vegetation.",
     },
     {
         "name": "Unakoti",
@@ -189,7 +189,7 @@ PLACES = [
         "facilities": "Ticket counter, paved pathways, drinking water points and parking.",
         "accessibility_info": "Sloping paths and steps across the site; limited access for wheelchairs.",
         "safety_notes": "Paths can be slippery during the monsoon - wear shoes with grip.",
-        "image_alt": "Large rock-cut deity carvings on forested Unakoti hill.",
+        "image_alt": "Rock-cut deity face and stone steps at Unakoti.",
     },
     {
         "name": "Tripura Sundari Temple",
@@ -335,7 +335,7 @@ PLACES = [
         "facilities": "Ticket counter, botanical garden, zoo enclosures, boating lake and cafeteria.",
         "accessibility_info": "Main paths are level; some forest trails are earth tracks.",
         "safety_notes": "Do not feed animals and stay on marked paths.",
-        "image_alt": "Sepahijala Wildlife Sanctuary forest paths and lake.",
+        "image_alt": "Spotted deer at Sepahijala Wildlife Sanctuary.",
     },
     {
         "name": "Chabimura (Debtamura)",
@@ -817,7 +817,7 @@ BUSINESSES = [
         "contact_email": "neermahal.dhaba@tripuraexplore.org",
         "price_note": "₹200 - ₹450 per meal",
         "image_url": "/static/images/places/neermahal-1.jpg",
-        "image_alt": "Lakeside dining pavilion overlooking Neermahal water palace",
+        "image_alt": "Aerial view of Neermahal palace on Rudrasagar Lake",
         "approval_status": "approved",
         "status_note": "Verified traditional dining partner in Melaghar.",
         "latitude": 23.4950,
@@ -841,7 +841,7 @@ BUSINESSES = [
         "contact_phone": "+91 98620 91823",
         "contact_email": "melaghar.transport@tripuraexplore.org",
         "price_note": "₹50/passenger shared boat; ₹600 private boat rental",
-        "image_url": "/static/images/places/neermahal-2.jpg",
+        "image_url": "/static/images/places/neermahal-2.webp",
         "image_alt": "Wooden passenger boats docked on Rudrasagar lake at Melaghar",
         "approval_status": "approved",
         "status_note": "Authorized boatmen cooperative and cab union.",
@@ -1909,6 +1909,48 @@ def seed_places() -> int:
                 {"url": f"{IMAGE_BASE}/{data['slug']}-1.jpg", "alt": f"{data['name']} architecture and visitor view"},
                 {"url": f"{IMAGE_BASE}/{data['slug']}-2.jpg", "alt": f"{data['name']} landscape panorama"},
             ]
+            if data["slug"] == "rudrasagar-lake":
+                values["gallery"] = [
+                    {"url": f"{IMAGE_BASE}/rudrasagar-lake.jpg", "alt": "Boats crossing Rudrasagar Lake through green wetland vegetation"},
+                    {"url": f"{IMAGE_BASE}/rudrasagar-lake-1.jpg", "alt": "Sunset over Rudrasagar Lake with a boat on the water"},
+                    {"url": f"{IMAGE_BASE}/rudrasagar-lake-2.jpg", "alt": "Boats moored at the Rudrasagar Lake shore"},
+                ]
+            if data["slug"] == "ujjayanta-palace":
+                values["gallery"] = [
+                    {"url": f"{IMAGE_BASE}/ujjayanta-palace-1.jpg", "alt": "Ujjayanta Palace framed by the gardens"},
+                    {"url": f"{IMAGE_BASE}/ujjayanta-palace-2.jpg", "alt": "Ujjayanta Palace illuminated at night"},
+                    {"url": f"{IMAGE_BASE}/ujjayanta-palace.jpg", "alt": "Wide view of Ujjayanta Palace and its reflecting pool"},
+                ]
+            if data["slug"] == "chabimura-debtamura":
+                values["gallery"] = [
+                    {"url": f"{IMAGE_BASE}/chabimura-gallery-1.jpg", "alt": "Forest path descending through the Chabimura gorge"},
+                    {"url": f"{IMAGE_BASE}/chabimura-gallery-2.jpg", "alt": "Rock-cut deity carvings at Chabimura"},
+                    {"url": f"{IMAGE_BASE}/chabimura-gallery-3.jpg", "alt": "Riverside rock carvings and visitors at Chabimura"},
+                ]
+            if data["slug"] == "pilak":
+                values["gallery"] = [
+                    {"url": f"{IMAGE_BASE}/pilak.jpg", "alt": "Ancient stone sculptures at Pilak"},
+                    {"url": f"{IMAGE_BASE}/pilak-1.jpg", "alt": "Archaeological remains among greenery at Pilak"},
+                    {"url": f"{IMAGE_BASE}/pilak-2.webp", "alt": "Standing stone sculpture at Pilak"},
+                ]
+            if data["slug"] == "unakoti":
+                values["gallery"] = [
+                    {"url": f"{IMAGE_BASE}/unakoti-gallery-1.jpg", "alt": "Rock shrine surrounded by green hills at Unakoti"},
+                    {"url": f"{IMAGE_BASE}/unakoti-gallery-2.jpg", "alt": "Rock-cut deity face and stone steps at Unakoti"},
+                    {"url": f"{IMAGE_BASE}/unakoti-gallery-3.jpg", "alt": "Carved stone deity at Unakoti"},
+                ]
+            if data["slug"] == "jampui-hills":
+                values["gallery"] = [
+                    {"url": values["image_url"], "alt": data.get("image_alt") or data["name"]},
+                    {"url": f"{IMAGE_BASE}/jampui-hills-gallery-1.jpg", "alt": "Viewpoint terrace among palms in Jampui Hills"},
+                    {"url": f"{IMAGE_BASE}/jampui-hills-gallery-2.jpg", "alt": "Sunset at the Jampui Hills sign and viewpoint"},
+                ]
+            if data["slug"] == "sepahijala-wildlife-sanctuary":
+                values["gallery"] = [
+                    {"url": f"{IMAGE_BASE}/sepahijala-zoo-gallery-1.jpg", "alt": "Sepahijala Zoo entrance sign"},
+                    {"url": f"{IMAGE_BASE}/sepahijala-zoo-gallery-2.jpg", "alt": "Visitors viewing wildlife at Sepahijala Zoo"},
+                    {"url": values["image_url"], "alt": "Spotted deer at Sepahijala Wildlife Sanctuary"},
+                ]
             if data["slug"] == "trishna-wildlife-sanctuary":
                 values["coordinates_verified"] = False
                 values["coordinate_source"] = (
@@ -1920,6 +1962,11 @@ def seed_places() -> int:
                 )
                 values["source_note"] = "Sanctuary location supplied by the project owner as Plus Code and full address."
             elif data["slug"] == "gumti-wildlife-sanctuary":
+                values["gallery"] = [
+                    {"url": f"{IMAGE_BASE}/gumti-wildlife-sanctuary.jpg", "alt": "Woodland path at Gumti Wildlife Sanctuary"},
+                    {"url": f"{IMAGE_BASE}/gumti-wildlife-sanctuary-1.jpg", "alt": "Forest cottages at Gumti Wildlife Sanctuary"},
+                    {"url": f"{IMAGE_BASE}/gumti-wildlife-sanctuary-2.webp", "alt": "Wild elephant in the forest at Gumti Wildlife Sanctuary"},
+                ]
                 values["coordinates_verified"] = False
                 values["coordinate_source"] = "User-provided Plus Code FR3H+5P2; Google Maps verification pending"
                 values["verification_notes"] = (

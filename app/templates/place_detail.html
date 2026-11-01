@@ -35,17 +35,69 @@
 <section class="section section--tight">
   <div class="container detail-grid">
     <div>
-      <div class="detail-media">
-        <img src="{{ place.image_url or url_for('static', filename='images/place-placeholder.svg') }}"
-             alt="{{ place.image_alt or place.name }}" width="900" height="675">
-      </div>
-      {% if place.gallery and place.gallery|length > 1 %}
-        <div class="gallery">
-          {% for image in place.gallery %}
-            <img src="{{ image.url }}" alt="{{ image.alt or place.name }}" loading="lazy" height="140">
+      {% set gallery_fallback_url = url_for('static', filename='images/place-placeholder.svg') %}
+      {% if place.slug == 'unakoti' %}
+        {% set gallery_images = [
+          {'url': url_for('static', filename='images/places/unakoti-gallery-1.jpg'), 'alt': 'Rock shrine surrounded by green hills at Unakoti'},
+          {'url': url_for('static', filename='images/places/unakoti-gallery-2.jpg'), 'alt': 'Rock-cut deity face and stone steps at Unakoti'},
+          {'url': url_for('static', filename='images/places/unakoti-gallery-3.jpg'), 'alt': 'Carved stone deity at Unakoti'}
+        ] %}
+      {% elif place.slug == 'jampui-hills' %}
+        {% set gallery_images = [
+          {'url': place.image_url, 'alt': place.image_alt or place.name},
+          {'url': url_for('static', filename='images/places/jampui-hills-gallery-1.jpg'), 'alt': 'Viewpoint terrace among palms in Jampui Hills'},
+          {'url': url_for('static', filename='images/places/jampui-hills-gallery-2.jpg'), 'alt': 'Sunset at the Jampui Hills sign and viewpoint'}
+        ] %}
+      {% elif place.slug == 'sepahijala-wildlife-sanctuary' %}
+        {% set gallery_images = [
+          {'url': url_for('static', filename='images/places/sepahijala-zoo-gallery-1.jpg'), 'alt': 'Sepahijala Zoo entrance sign'},
+          {'url': url_for('static', filename='images/places/sepahijala-zoo-gallery-2.jpg'), 'alt': 'Visitors viewing wildlife at Sepahijala Zoo'},
+          {'url': url_for('static', filename='images/places/sepahijala-zoo-gallery-3.jpg'), 'alt': 'Spotted deer at Sepahijala Wildlife Sanctuary'}
+        ] %}
+      {% else %}
+        {% set gallery_images = place.gallery or [] %}
+      {% endif %}
+      {% set gallery_main_url = place.image_url or (gallery_images[0].url if gallery_images else gallery_fallback_url) %}
+      {% set gallery_main_alt = place.image_alt or ((gallery_images[0].alt if gallery_images else none) or place.name) %}
+      {% if place.slug == 'sepahijala-wildlife-sanctuary' %}
+        {% set gallery_main_url = gallery_images[2].url %}
+        {% set gallery_main_alt = gallery_images[2].alt %}
+      {% endif %}
+      <div class="detail-media" data-destination-gallery>
+        <img src="{{ gallery_main_url }}"
+             alt="{{ gallery_main_alt }}" width="900" height="675"
+             data-destination-gallery-main
+             data-fallback-src="{{ gallery_fallback_url }}">
+      {% set gallery_state = namespace(has_main=false, count=0) %}
+      {% for image in gallery_images %}
+        {% set gallery_state.count = gallery_state.count + 1 %}
+        {% if image.url == gallery_main_url %}{% set gallery_state.has_main = true %}{% endif %}
+      {% endfor %}
+      {% if not gallery_state.has_main %}
+        {% set gallery_state.count = gallery_state.count + 1 %}
+      {% endif %}
+      {% if gallery_state.count > 1 %}
+        <div class="gallery" role="group" aria-label="{{ place.name }} photo gallery">
+          {% if not gallery_state.has_main %}
+            <button class="gallery__thumbnail is-selected" type="button"
+                    aria-label="Show {{ gallery_main_alt }} as the main image" aria-pressed="true"
+                    data-image-src="{{ gallery_main_url }}" data-image-alt="{{ gallery_main_alt }}">
+              <img src="{{ gallery_main_url }}" alt="" loading="lazy" height="140"
+                   data-fallback-src="{{ gallery_fallback_url }}">
+            </button>
+          {% endif %}
+          {% for image in gallery_images %}
+            <button class="gallery__thumbnail{% if image.url == gallery_main_url %} is-selected{% endif %}"
+                    type="button" aria-label="Show {{ image.alt or place.name }} as the main image"
+                    aria-pressed="{{ 'true' if image.url == gallery_main_url else 'false' }}"
+                    data-image-src="{{ image.url }}" data-image-alt="{{ image.alt or place.name }}">
+              <img src="{{ image.url }}" alt="" loading="lazy" height="140"
+                   data-fallback-src="{{ gallery_fallback_url }}">
+            </button>
           {% endfor %}
         </div>
       {% endif %}
+      </div>
 
       <nav class="tabs" role="tablist" aria-label="Destination information">
         <button class="tab-button" role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true">Overview</button>
@@ -265,4 +317,5 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script id="map-settings" type="application/json">{{ map_settings|tojson }}</script>
 <script src="{{ url_for('static', filename='js/map.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/destination-gallery.js') }}" defer></script>
 {% endblock %}
